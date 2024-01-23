@@ -1,0 +1,35 @@
+## Model with photodissociation in the outer disk, at a low height in the disk
+
+
+#### Change the vertical boundaries in the outer ring to 3, 100
+lnlike(((-.371,-.371,0),-11.1,325,-11.,0.,0.,0.,200),cleanup=False)
+write_model_vis('alma.n2hdata.vis.fits','alma.fits')
+## execfile('make_model_image.py')
+mv alma.model.fits alma.n2h_lowphotod.model.fits
+plt.figure()
+im_plot_spec('alma.n2hdata.fits',color='k',norm_peak=True)
+im_plot_spec('alma.n2h_lowphotod.model.fits',color='r',ls='--',threshold=.00268,norm_peak=True)
+plt.legend(('$N_2H^+$ data','Low Z photodissociation'),frameon=False,fontsize=14)
+!bettermoments alma.n2h_lowphotod.model.fits -method quadratic -clip 3
+plt.figure()
+plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
+plot_profile('alma.n2h_lowphotod.model_Fnu.fits',overplot=True,norm_peak=True)
+
+#photodissociation ring from .79 to 3 in the vertical direction.
+cd DCO_data
+lnlike(((-.371,-.371,0),2.444,-20,-11.6,-9.3,0.,14.3,200))
+write_model_vis('alma.dcodata.vis.fits','alma.fits')
+## execfile('make_model_image.py')
+mv alma.model.fits alma.dco_photod.model.fits
+plt.figure()
+im_plot_spec('dco.fits',color='k',norm_peak=True)
+im_plot_spec('alma.dco_photod.model.fits',color='r',ls='--',threshold=.0059,norm_peak=True)
+plt.legend(('$DCO^+$ Data','Photodesorption'),frameon=False,fontsize=14)
+#plt.text(4,.3,'$DCO^+$',fontsize=14)
+!bettermoments alma.dco_photod.model.fits -method quadratic -clip 3
+!bettermoments alma.dco_photod.model.fits -method zeroth -clip 3
+plot_profile('DCO_code/dco_I0.fits',norm_peak=True)
+plot_profile('DCO_code/alma.dco_photod.model_M0.fits',norm_peak=True,overplot=True)
+
+plot_temp_av2(model='lowphotod')
+plot_chan_n2models(model='lowphotod')

@@ -1,0 +1,37 @@
+## Model with photodissociation in the outer disk, at a high height in the disk
+
+
+#### Change the vertical boundaries in the outer ring to .01, .79
+lnlike(((-.371,-.371,0),-11.1,325,-10.,0.,0.,0.,200),cleanup=False)
+write_model_vis('alma.n2hdata.vis.fits','alma.fits')
+## execfile('make_model_image.py')
+mv alma.model.fits alma.n2h_highphotod.model.fits
+plt.figure()
+im_plot_spec('alma.n2hdata.fits',color='k',norm_peak=True)
+im_plot_spec('alma.n2h_highphotod.model.fits',color='r',ls='--',threshold=.00268,norm_peak=True)
+plt.legend(('$N_2H^+$ data','High Z photodissociation'),frameon=False,fontsize=14)
+!bettermoments alma.n2h_highphotod.model.fits -method quadratic -clip 3
+plt.figure()
+plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
+plot_profile('alma.n2h_highphotod.model_Fnu.fits',overplot=True,norm_peak=True)
+
+## Why the two bumps in the outer disk? In low photod model, the outer ring is optically thick, with tau_max~3 and the tau=1 surface in this region is at Z~30 au. For high photod the outer ring is very optically thin, with tau_max~0.4. There is an extra outer ring with smaller optical depth, tau_max~0.09.
+
+#photodissociation ring from .79 to 3 in the vertical direction.
+cd DCO_data
+lnlike(((-.371,-.371,0),2.444,-20,-10.3,-10.5,0.,14.3,200))
+#lnlike(((-.371,-.371,4,1.0),2.444,-20,-11.5,-9.3,0.,14.3,200.),cleanup=False) #for a ring between 200 and 320 au
+write_model_vis('alma.dcodata.vis.fits','alma.fits')
+## execfile('make_model_image.py')
+mv alma.model.fits alma.dco_photod.model.fits
+plt.figure()
+im_plot_spec('dco.fits',color='k',norm_peak=True)
+im_plot_spec('alma.dco_photod.model.fits',color='r',ls='--',threshold=.0059,norm_peak=True)
+plt.legend(('$DCO^+$ Data','Photodissociation'),frameon=False,fontsize=14)
+#plt.text(4,.3,'$DCO^+$',fontsize=14)
+!bettermoments alma.dco_photod.model.fits -method quadratic -clip 3
+plot_profile('DCO_code/dco_Fnu.fits',norm_peak=True)
+plot_profile('DCO_code/alma.dco_photod.model_Fnu.fits',norm_peak=True,overplot=True)
+
+plot_temp_av2(model='highphotod')
+plot_chan_n2models(model='highphotod')

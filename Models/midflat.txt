@@ -1,0 +1,31 @@
+## Model with flat midplane temperature profile
+
+lnlike(((0.,-.371,3),-11.1,325,-100,0.,0.,0.),cleanup=False)
+write_model_vis('alma.n2hdata.vis.fits','alma.fits')
+## execfile('make_model_image.py')
+mv alma.model.fits alma.n2h_midflat.model.fits
+plt.figure()
+im_plot_spec('alma.n2hdata.fits',color='k',norm_peak=True)
+im_plot_spec('alma.n2h_midflat.model.fits',color='r',ls='--',threshold=.00268,norm_peak=True)
+plt.legend(('$N_2H^+$ data','q$_{mid}$=0'),frameon=False,fontsize=14)
+!bettermoments alma.n2h_midflat.model.fits -method quadratic -clip 3
+plt.figure()
+plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
+plot_profile('alma.n2h_midflat.model_Fnu.fits',overplot=True,norm_peak=True)
+
+cd DCO_data
+lnlike(((0.,-.371,3),2.444,-20,-10.3,-20,0.,14.3),cleanup=False)
+write_model_vis('alma.dcodata.vis.fits','alma.fits')
+## execfile('make_model_image.py')
+mv alma.model.fits alma.dco_midflat.model.fits
+plt.figure()
+im_plot_spec('dco.fits',color='k',norm_peak=True)
+im_plot_spec('alma.dco_midflat.model.fits',color='r',ls='--',threshold=.0059,norm_peak=True)
+plt.legend(('$DCO^+$ Data','q$_{mid}$=0'),frameon=False,fontsize=14)
+#plt.text(4,.3,'$DCO^+$',fontsize=14)
+!bettermoments alma.dco_midflat.model.fits -method quadratic -clip 3
+plot_profile('DCO_code/dco_Fnu.fits',norm_peak=True)
+plot_profile('DCO_code/alma.dco_midflat.model_Fnu.fits',norm_peak=True,overplot=True)
+
+plot_temp_av2(model='midflat')
+plot_chan_n2models(model='midflat')
