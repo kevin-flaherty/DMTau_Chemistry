@@ -75,8 +75,8 @@ The text files within *Models* specify the different calls to *lnlike* that were
 
 ## Dependencies
 Beyond standard packages (astropy, numpy, matplotlib) this code utilizes:
-  - [vis_sample] (https://github.com/AstroChem/vis_sample): For generating model visibilities using input model images.
-  - [GoFish] (https://fishing.readthedocs.io): For generating radial profiles.
+  - [vis_sample](https://github.com/AstroChem/vis_sample): For generating model visibilities using input model images.
+  - [GoFish](https://fishing.readthedocs.io): For generating radial profiles.
 
 ## Disclaimer
 This code is provided 'as is'. It represents the code that was used to analyze the data, and generate many of the key figures. Its functionality has not been tested on other machines, and any questions should be directed to Amina Diop or Kevin Flaherty.
