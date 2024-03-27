@@ -154,12 +154,12 @@ def dustmodel(disk,nu):
 
     return trapz(arg,S,axis=2),tau
 
-datfile = 'alma.dcodata'
-hdr=fits.getheader(datfile+'.vis.fits')
-freq = (np.arange(hdr['naxis4'])+1-hdr['crpix4'])*hdr['cdelt4']+hdr['crval4']
-obsv = (hdr['restfreq']-freq)/hdr['restfreq']*2.99e5
+#datfile = 'alma.dcodata'
+#hdr=fits.getheader(datfile+'.vis.fits')
+#freq = (np.arange(hdr['naxis4'])+1-hdr['crpix4'])*hdr['cdelt4']+hdr['crval4']
+#obsv = (hdr['restfreq']-freq)/hdr['restfreq']*2.99e5
 
-def total_model(disk,imres=0.03,distance=144.5,chanmin=-2.67,nchans=22,chanstep=0.254,flipme=True,Jnum=3,freq0=288.143858,xnpix=600,vsys=6.06,PA=154.8,offs=[0.0,0.0],modfile='testpy_alma',abund=1.,obsv=obsv,wind=False,isgas=True,includeDust=False,extra=0,bin=1,hanning=True):
+def total_model(disk,imres=0.03,distance=144.5,chanmin=-2.67,nchans=22,chanstep=0.254,flipme=True,Jnum=3,freq0=288.143858,xnpix=600,vsys=6.06,PA=154.8,offs=[0.0,0.0],modfile='testpy_alma',abund=1.,obsv=None,wind=False,isgas=True,includeDust=False,extra=0,bin=1,hanning=True):
     '''Run all of the model calculations given a disk object.
     Outputs are a fits file with the model images, along with visibility files (one in miriad format and one in fits format) for this model
 

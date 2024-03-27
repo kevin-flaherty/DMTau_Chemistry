@@ -53,7 +53,7 @@ The first element in this list is `q`, which can take multiple forms, but is alw
 - `q=1`: a double power-law shape for the temperature profile (i.e. T $\sim$ r^(q1) inside of Rbreak and T $\sim$ r^(q2) outside of Rbreak)
 - `q=2`: a jump in the temperature beyond Rbreak. In this case the second element of this list specifies the multiplicative factor applied to the temperature beyond Rbreak. For example (-.25, 1.3,2) specifies that T~r^(-.25), with a 30% increase in the temperature beyond Rbreak.
 - `q=3`: separate temperature profiles for the midplane and atmosphere, with the first element specifying the temperature profile of the midplane and the second element specifying the temperature profile of the atmosphere.
-- `q=4`: separate temperature profiles for the midplane and atmosphere, along with a jump in the temperature beyond Rbreak. In this case the list must include four elements, i.e. (-.15,-.5,4.1.3), where the midplane follows T $\sim$ r^(-.15), the atmosphere follows T$\sim$r^(-0.5), and there is a 30% jump in temperature beyond Rbreak.
+- `q=4`: separate temperature profiles for the midplane and atmosphere, along with a jump in the temperature beyond Rbreak. In this case the list must include four elements, i.e. (-.15,-.5,4.1.3), where the midplane follows T $\sim$ r^(-.15), the atmosphere follows T $\sim$ r^(-0.5), and there is a 30% jump in temperature beyond Rbreak.
 
 Any value of `q` that is not listed above will revert to the case where the midplane and atmosphere have the same temperature profile, with no jump beyond Rbreak.
 
@@ -77,6 +77,8 @@ The text files within *Models* specify the different calls to *lnlike* that were
 Beyond standard packages (astropy, numpy, matplotlib) this code utilizes:
   - [vis_sample](https://github.com/AstroChem/vis_sample): For generating model visibilities using input model images.
   - [GoFish](https://fishing.readthedocs.io): For generating radial profiles.
+
+Some of the functions reference the data, which has not been included in this repository, but is available upon request.
 
 ## Disclaimer
 This code is provided 'as is'. It represents the code that was used to analyze the data, and generate many of the key figures. Its functionality has not been tested on other machines, and any questions should be directed to Amina Diop or Kevin Flaherty.
