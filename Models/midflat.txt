@@ -1,6 +1,6 @@
 ## Model with flat midplane temperature profile
 
-lnlike(((0.,-.371,3),-11.1,325,-100,0.,0.,0.),cleanup=False)
+lnlike(((0.,-.371,3),-11.1,325,-100,0.,0.,0.,200.),cleanup=False)
 write_model_vis('alma.n2hdata.vis.fits','alma.fits')
 ## execfile('make_model_image.py')
 mv alma.model.fits alma.n2h_midflat.model.fits
@@ -14,7 +14,7 @@ plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
 plot_profile('alma.n2h_midflat.model_Fnu.fits',overplot=True,norm_peak=True)
 
 cd DCO_data
-lnlike(((0.,-.371,3),2.444,-20,-10.3,-20,0.,14.3),cleanup=False)
+lnlike(((0.,-.371,3),2.444,-20,-10.3,-20,0.,14.3,200.),cleanup=False)
 write_model_vis('alma.dcodata.vis.fits','alma.fits')
 ## execfile('make_model_image.py')
 mv alma.model.fits alma.dco_midflat.model.fits

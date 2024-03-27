@@ -39,7 +39,7 @@ The most direct way to generate models is using the *lnlike* function within *si
 For N2H+ an example usage of the *lnlike* function is:
 
 ```
-lnlike(((-.371,-.371,0),-11.1,325,-100,0.,0.,0.),cleanup=False)
+lnlike(((-.371,-.371,0),-11.1,325,-100,0.,0.,0.200.),cleanup=False)
 ```
 
 The first element is a list of model parameters:
@@ -47,18 +47,39 @@ The first element is a list of model parameters:
 ```
 [q,abund,Rc,abund2,turbulence, x-offset, y-offset, Rbreak]
 ```
-The abundance is the logarithm of the abundance relative to H2, Rc is in units of au, turbulence is in units of the thermal broadening of N2H+, and the x and y offsets are in units of arc-seconds. Rbreak refers to the radii beyond which e.g. the temperature jumps (see discussion of q).
+The abundance is the logarithm of the abundance relative to H2 (the first abundance is for the region with 19 < Tgas < 9 K, while the second abundance is for the outer ring), Rc is in units of au, turbulence is in units of the thermal broadening of N2H+, and the x and y offsets are in units of arc-seconds. Rbreak refers to the radii beyond which e.g. the temperature jumps (see discussion of q).
 
 The first element in this list is `q`, which can take multiple forms, but is always a list. In the example above the first element of the list is the `q` value for the midplane, the second is the `q` value for the disk atmosphere, and the third is a flag (which can take values of 0, 1, 2, 3, or 4) which in this case specifies that the midplane and the atmosphere have the same temperature profile. The other values of this flag are:
-- `q=1`: a double power-law shape for the temperature profile (i.e. T$\sim$r^(q1) inside of Rbreak and T$\sim$r^(q2) outside of Rbreak)
+- `q=1`: a double power-law shape for the temperature profile (i.e. T $\sim$ r^(q1) inside of Rbreak and T $\sim$ r^(q2) outside of Rbreak)
 - `q=2`: a jump in the temperature beyond Rbreak. In this case the second element of this list specifies the multiplicative factor applied to the temperature beyond Rbreak. For example (-.25, 1.3,2) specifies that T~r^(-.25), with a 30% increase in the temperature beyond Rbreak.
 - `q=3`: separate temperature profiles for the midplane and atmosphere, with the first element specifying the temperature profile of the midplane and the second element specifying the temperature profile of the atmosphere.
-- `q=4`: separate temperature profiles for the midplane and atmosphere, along with a jump in the temperature beyond Rbreak. In this case the list must include four elements, i.e. (-.15,-.5,4.1.3), where the midplane follows T$\sim$r^(-.15), the atmosphere follows T$\sim$r^(-0.5), and there is a 30% jump in temperature beyond Rbreak.
+- `q=4`: separate temperature profiles for the midplane and atmosphere, along with a jump in the temperature beyond Rbreak. In this case the list must include four elements, i.e. (-.15,-.5,4.1.3), where the midplane follows T $\sim$ r^(-.15), the atmosphere follows T$\sim$r^(-0.5), and there is a 30% jump in temperature beyond Rbreak.
 
 Any value of `q` that is not listed above will revert to the case where the midplane and atmosphere have the same temperature profile, with no jump beyond Rbreak.
 
+For DCO+ the usage of `lnlike` is similar, but with a slightly different set of input parameters:
+```
+lnlike(((-.371,-.371,0),2.444,-20,-10.4,-20,0.,14.3,200.))
+```
+
+where the list of input parameters is
+```
+[q, Rc, log(abund), log(abund2), log(abund3), turbulence, Tmid0, Rbreak]
+```
+
+The parameters `q`, `Rc`, and `Rbreak` have the same behavior as above. The `turbulence` works as for N2H+, but its value is in units of the thermal speed of DCO+. The three abundances represent the abundance in (1) the warm pathway, (2) the cold pathway, (3) the CO photodissociation region.
+
+
 The text files within *Models* specify the different calls to *lnlike* that were used to generate different models.
 
+
+## Dependencies
+Beyond standard packages (astropy, numpy, matplotlib) this code utilizes:
+  - [vis_sample] (https://github.com/AstroChem/vis_sample): For generating model visibilities using input model images.
+  - [GoFish] (https://fishing.readthedocs.io): For generating radial profiles.
+
+## Disclaimer
+This code is provided 'as is'. It represents the code that was used to analyze the data, and generate many of the key figures. Its functionality has not been tested on other machines, and any questions should be directed to Amina Diop or Kevin Flaherty.
 
 ## Attribution
 If you make use of this package in your research, please cite Diop et al. in prep.

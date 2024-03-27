@@ -1,6 +1,6 @@
 ## Model with a 30% temperature jump in the outer disk
 
-lnlike(((-.371,1.3,2),-11.1,325,-100,0.,0.,0.),cleanup=False)
+lnlike(((-.371,1.3,2),-11.1,325,-100,0.,0.,0.,200.),cleanup=False)
 write_model_vis('alma.n2hdata.vis.fits','alma.fits')
 ## execfile('make_model_image.py')
 mv alma.model.fits alma.n2h_smallwarmout.model.fits
@@ -14,7 +14,7 @@ plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
 plot_profile('alma.n2h_smallwarmout.model_Fnu.fits',overplot=True,norm_peak=True)
 
 cd DCO_data
-lnlike(((-.371,1.3,2),2.444,-20,-10.5,-20,0.,14.3),cleanup=False) 
+lnlike(((-.371,1.3,2),2.444,-20,-10.5,-20,0.,14.3,200.),cleanup=False) 
 write_model_vis('alma.dcodata.vis.fits','alma.fits')
 ## execfile('make_model_image.py')
 mv alma.model.fits alma.dco_smallwarmout.model.fits

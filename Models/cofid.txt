@@ -1,6 +1,6 @@
 #Model based on fiducial CO structure.
 
-lnlike(((-.371,-.371,0),-11.1,325,-100,0.,0.,0.,0.),cleanup=False)
+lnlike(((-.371,-.371,0),-11.1,325,-100,0.,0.,0.,200.),cleanup=False)
 write_model_vis('alma.n2hdata.vis.fits','alma.fits')
 ## execfile('make_model_image.py')
 mv alma.model.fits alma.n2h_cofid.model.fits
