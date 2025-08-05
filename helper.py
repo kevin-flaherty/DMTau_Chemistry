@@ -6,6 +6,7 @@ import matplotlib.pylab as plt
 from gofish import imagecube
 import disk
 from vis_sample import vis_sample
+from scipy.optimize import minimize
 
 def plot_profile(file,overplot=False,norm_peak=False):
     '''file is the moment zero map created from bettermoments.
@@ -676,3 +677,243 @@ def plot_chan_n2models(model='cofid',include_fluxscale=False):
         tick.label1.set_fontsize(14)
     for tick in ax.yaxis.get_major_ticks():
         tick.label1.set_fontsize(14)
+
+def run_simplex(model='cofid'):
+    '''Run a downhill simplex fitting of data to a model. This function is used for N2H+.'''
+    import disk
+    from single_model import *
+
+
+    if model == 'cofid':
+        q=[-.371,-.371,0] #fiducial model, photod
+        initial_guess = [-11.1,] #log(abundance of ring)
+        #With tol=.1, min=-11.308125, chi^2=0.99385442
+
+    if model =='smallwarmout':
+        q=[-.371,1.3,2] #fiducial model, photod
+        initial_guess = [-11.1,] #log(abundance of ring)
+        #With tol=0.1, min=-11.3775, chi2=0.993766365679
+        #  Significantly better than cofid, with Delta_AIC=Delta_BIC = 1400 (prob=8.9e-305)
+
+    if model == 'midflat':
+        q=[0,-.371,3] #fiducial model, photod
+        initial_guess = [-11.1,] #log(abundance of ring)
+        #With tol=0.1, min=-11.308125, chi2=0.99376027955
+        #  Significantly better than smallwarmout, with Delta_AIC=Delta_BIC=96.8, prob=9e-22
+
+    if model == 'highphotod':
+        q=[-.371,-.371,0] #fiducial model, photod
+
+        ### To fit only the abundance of the two rings, uncomment the next line, comment out the other initial_guess, and replace x[2] in the call to add_mol_ring with 325.
+        #initial_guess = [-11.1,-10.0] #log(abundance of ring)
+        #With tol=0.1, min=-11.36483093, -9.56600952, chi2=0.993715526489
+        #  Significantly better than midflat, with Delta_BIC=696, Delta_AIC=711 (prob=2.9e-155)
+        initial_guess = [-11.1,-10.0,325] #log(abundance of ring)
+        #With tol=0.1, min=-11.39164, -9.4834387, 277.89, chi2=0.99369215
+        #  Significantly better than 2 param highphotod, with Delta_AIC=371 (prob=1.9e-81), Delta_BIC=356
+
+    #models.append('lowphotod')
+    if model == 'lowphotod':
+        q=[-.371,-.371,0] #fiducial model, photod
+        initial_guess = [-11.1,-10.0,325] #log(abundance of ring)
+        #with tol=0.1, min=-11.38986, -10.814, 314.52, chi2 = 0.993631575
+        #  Significantly better than 3 param high photod with Delta_AIC=Delta_BIC=963.2(prob=6.8e-210)
+        #  Significantly better than 2 param low photod, with Delta_AIC=155.9 (prob=1e-34), Delta_BIC=140.3
+
+        ### To fit only the abundance of the two rings, uncomment the next line, comment out the other initial_guess, and replace x[2] in the call to add_mol_ring with 325.
+        #initial_guess = [-11.1,-10.0]
+        #with tol=0.1, min=-11.3775, -10.875, chi2=0.9936413787060615
+        #  Significantly better than 2 param highphotod, with Delta_AIC=1179 (prob=9.3e-257), Delta_BIC=1179
+        #  Significantly better than 3 param highphotod, with Delta_AIC=807 (prob=4.9e-176), Delta_BIC=822
+
+    datfile = 'alma.n2hdata'
+    hdr=fits.getheader(datfile+'.vis.fits')
+    nu = 2*hdr['naxis4']*hdr['gcount']-1-2086120 #227478
+    freq = (np.arange(hdr['naxis4'])+1-hdr['crpix4'])*hdr['cdelt4']+hdr['crval4']
+    obsv = (hdr['restfreq']-freq)/hdr['restfreq']*2.99e5
+    vsys=5.95#5.76 from grid_search
+    chanstep = np.abs(obsv[1]-obsv[0])#-0.208337
+    nchans = 2*np.ceil(np.abs(obsv-vsys).max()/chanstep)-2
+    chanmin = -(nchans/2.-.5)*chanstep
+    xoff = 0.
+    yoff = 0.
+    resolution = 0.0325
+
+    obj = fits.open(datfile+'.vis.fits')
+    vis_obj = (obj[0].data['data']).squeeze()
+    real_obj = (vis_obj[:,:,0,0]+vis_obj[:,:,1,0])/2.
+    imag_obj = (vis_obj[:,:,0,1]+vis_obj[:,:,1,1])/2.
+    weight_real = vis_obj[:,:,0,2]
+    weight_imag = vis_obj[:,:,1,2]
+    weight_real[real_obj==0] = 0.
+    weight_imag[imag_obj==0] = 0.
+
+    obj.close()
+
+
+
+    def objective_function(x,model):
+        params = [q, #qq
+              0.04,#10**(p[1]), #Mdisk
+            1.,#1.181526,#p[6],#1.,   #pp
+            1.,#10.,  #Rin
+            1000.,#Rout
+            10**(2.444),#10**(p[2]), #Rc
+            -36.0, #51.5 #inclination, which will be negative for IM Lup.
+            .54,  #Mstar
+            10**(x[0]), #2*10**(-5.),#1e-4, #Xco
+            .279*3.438,#p[2],#10**(p[3]), #vturb
+            70.,#2*3.4707*np.sqrt(p[4]),#****** CHANGE BACK WHEN DONE ***** 70.,#p[4], #Zq0
+            14.3,#19.,  #Tmid0
+            24.68, #Tatm0
+            19., #Tco
+            [.79,1000], #upper and lower boundaries in column density
+            [9.,800.], #inner and outer boundaries for abundance
+            -1, 200]   #handed
+
+        d=disk.Disk(params,rtg=False)
+        obs = [150,101,300,170] #150,101,280,170 rt grid nr,nphi,nz,zmax
+
+        d.set_obs(obs)
+        d.set_rt_grid()
+        d.set_line('n2h32')
+
+        if model =='lowphotod':
+            d.add_mol_ring(x[2],x[2]+50,3,100,10**(x[1]),just_frozen=False) #3,100 #.01, .79
+        if model == 'highphotod':
+            d.add_mol_ring(x[2],x[2]+50,.01,.79,10**(x[1]),just_frozen=False) #3,100 #.01, .79
+        total_model(disk=d,chanmin=chanmin,nchans=nchans,chanstep=chanstep,offs=[xoff,yoff],modfile='alma',imres=resolution,obsv=obsv,vsys=vsys,freq0=279.51170100,Jnum=2,distance=144.5,hanning=True,PA=154.8,bin=4)
+
+        # - Generate model visibilities
+        model_vis = vis_sample(uvfile=datfile+'.vis.fits',imagefile='alma.fits',mod_interp=False)
+        real_model = model_vis.real
+        imag_model = model_vis.imag
+        chi = ((real_model-real_obj)**2*weight_real).sum() + ((imag_model-imag_obj)**2*weight_imag).sum()
+        return chi/nu
+
+
+    print('starting minimization')
+
+    ### Minimize the reduced chi-squared, to within a tolerance of 0.1
+    result = minimize(objective_function,initial_guess,method='nelder-mead',tol=.1,args=(model))
+    if result.success:
+        print('Minimum found at ',result.x)
+        print('Minimum value: ',result.fun)
+    else:
+        print('Optimization failed: ',result.message)
+
+def run_simplex_dco(model='cofid'):
+    '''Run a downhill simplex fitting of data to a model for DCO+.'''
+    import disk_dco
+    from single_model_dco import *
+
+    if model == 'cofid':
+        #models.append('cofid')
+        q=[-.371,-.371,0] #fiducial model, photod
+        initial_guess = [-11.1,] #log(abundance of ring)
+        #With tol=.1, min=-11.655, chi^2=0.9186662777
+
+    if model =='smallwarmout':
+        #models.append('smallwarmout')
+        q=[-.371,1.3,2] #fiducial model, photod
+        initial_guess = [-11.1,] #log(abundance of ring)
+        #With tol=0.1, min=-11.5856, chi2=0.9186099438 -> Significantly better than cofid, with Delta_AIC=Delta_BIC=997.1, prob=3e-217
+
+    if model == 'midflat':
+        #models.append('midflat')
+        q=[0,-.371,3] #fiducial model, photod
+        initial_guess = [-11.1,] #log(abundance of ring)
+        #With tol=0.1, min=-11.030625, chi2=0.91839062838
+        #  Significantly better than cofid, with Delta_AIC=Delta_BIC=4879, prob=0.
+        #  Significantly better than cofid, with Delta_AIC=Delta_BIC=3881, prob=0
+
+    if model == 'photod':
+        #models.append('highphotod')
+        q=[-.371,-.371,0] #fiducial model, photod
+
+        ### To fit only the abundance of the two rings, uncomment the next line, comment out the other initial_guess, and replace x[2] in the call to add_mol_ring with 325.
+        #initial_guess = [-11.1,-10.0] #log(abundance of ring)
+        #With tol=0.1, min=-11.63061, -9.604248 chi2=0.918313619
+        #  Significantly better than midflat, with Delta_AIC=1363 (prob=1e-216), Delata_BIC=1347
+        initial_guess = [-11.1,-10.0,325] #log(abundance of ring)
+        #With tol=0.1, min=-11.698575, -9.47846, 230.693 chi2=0.9180635
+        #  Significantly better than two param photod, with Delta_AIC=4427 (prob=0.), Delta_BIC=4411
+
+
+    #disks = []
+
+    #for q in qs:
+    datfile = 'alma.dcodata'
+    hdr=fits.getheader(datfile+'.vis.fits')
+    nu = 2*hdr['naxis4']*hdr['gcount']-1-2086120 #227478
+    freq = (np.arange(hdr['naxis4'])+1-hdr['crpix4'])*hdr['cdelt4']+hdr['crval4']
+    obsv = (hdr['restfreq']-freq)/hdr['restfreq']*2.99e5
+    vsys=5.95#5.76 from grid_search
+    chanstep = np.abs(obsv[1]-obsv[0])#-0.208337
+    nchans = 2*np.ceil(np.abs(obsv-vsys).max()/chanstep)-2
+    chanmin = -(nchans/2.-.5)*chanstep
+    xoff = 0.
+    yoff = 0.
+    resolution = 0.03
+    #obs = [180,131,300,170] #150,101,280,170 rt grid nr,nphi,nz,zmax
+
+    obj = fits.open(datfile+'.vis.fits')
+    vis_obj = (obj[0].data['data']).squeeze()
+    real_obj = (vis_obj[:,:,0,0]+vis_obj[:,:,1,0])/2.
+    imag_obj = (vis_obj[:,:,0,1]+vis_obj[:,:,1,1])/2.
+    weight_real = vis_obj[:,:,0,2]
+    weight_imag = vis_obj[:,:,1,2]
+    weight_real[real_obj==0] = 0.
+    weight_imag[imag_obj==0] = 0.
+
+    obj.close()
+
+
+
+    def objective_function(x,model):
+        params = [q, #qq
+              0.04,#10**(p[1]), #Mdisk
+            1.,#1.181526,#p[6],#1.,   #pp
+            1.,#10.,  #Rin
+            1000.,#Rout
+            10**(2.444),#10**(p[2]), #Rc
+            -36.0, #51.5 #inclination, which will be negative for IM Lup.
+            .54,  #Mstar
+            [10**(-20.),10**(x[0])], #2*10**(-5.),#1e-4, #Xco
+            .279*3.438,#p[2],#10**(p[3]), #vturb
+            70.,#2*3.4707*np.sqrt(p[4]),#****** CHANGE BACK WHEN DONE ***** 70.,#p[4], #Zq0
+            14.3,#19.,  #Tmid0
+            24.68, #Tatm0
+            #19., #Tco
+            [.79,1000], #upper and lower boundaries in column density
+            [9.,800.], #inner and outer boundaries for abundance
+            -1, 200]   #handed
+
+        d=disk_dco.Disk(params,rtg=False)
+        obs = [150,101,300,170] #150,101,280,170 rt grid nr,nphi,nz,zmax
+
+        d.set_obs(obs)
+        d.set_rt_grid()
+        d.set_line('dco')
+
+        if model =='photod':
+            d.add_mol_ring(x[2],x[2]+50,.79,3.,10**(x[1]),just_frozen=False) #3,100 #.01, .79
+        total_model(disk=d,chanmin=chanmin,nchans=nchans,chanstep=chanstep,offs=[xoff,yoff],modfile='alma',imres=resolution,obsv=obsv,vsys=vsys,freq0=288.143858,Jnum=3,distance=144.5,hanning=True,PA=154.8,bin=2)
+
+        # - Generate model visibilities
+        model_vis = vis_sample(uvfile=datfile+'.vis.fits',imagefile='alma.fits',mod_interp=False)
+        real_model = model_vis.real
+        imag_model = model_vis.imag
+        chi = ((real_model-real_obj)**2*weight_real).sum() + ((imag_model-imag_obj)**2*weight_imag).sum()
+        return chi/nu
+
+
+    print('starting minimization')
+
+    ### Minimize the reduced chi-squared, to within a tolerance of 0.1
+    result = minimize(objective_function,initial_guess,method='nelder-mead',tol=.1,args=(model))
+    if result.success:
+        print('Minimum found at ',result.x)
+        print('Minimum value: ',result.fun)
+    else:
+        print('Optimization failed: ',result.message)
