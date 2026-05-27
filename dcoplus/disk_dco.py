@@ -304,11 +304,19 @@ class Disk:
             zup = (tT<70.) & (tT>30.)
             if zup.sum() > 0:
             #    #self.Xmol[zup] = 1/2*self.Xmol[zup]
-                self.Xmol[zup] = self.Xdco[0]
+                self.Xmol[zup] = self.Xdco[0] *np.exp(370./tT[zup]-370./50)
+                #print('Warm pathway cells: ',zup.sum())
+                #print('Warm pathway max/min r: ',self.r[zup].max()/self.AU,self.r[zup].min()/self.AU)
+                #print('Warm pathway max/min T: ',tT[zup].max(),tT[zup].min())
+                #print('Warm pathway max/min z: ',tdiskZ[zup].max()/self.AU,tdiskZ[zup].min()/self.AU)
 
             zup = (tT<30.) & (tT>18.)
             if zup.sum() > 0:
-                self.Xmol[zup] += self.Xdco[1]
+                self.Xmol[zup] += self.Xdco[1] * np.exp(232/tT[zup]-232/25)
+                #print('Cold pathway cells: ',zup.sum())
+                #print('Cold pathway max/min r: ',self.r[zup].max()/self.AU,self.r[zup].min()/self.AU)
+                #print('Cold pathway max/min T: ',tT[zup].max(),tT[zup].min())
+                #print('Cold pathway max/min z: ',tdiskZ[zup].max()/self.AU,tdiskZ[zup].min()/self.AU)
 
             #zup = (tT<18.)
             #if zup.sum() > 0:

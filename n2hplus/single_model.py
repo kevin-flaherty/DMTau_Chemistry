@@ -6,7 +6,6 @@ from raytrace import *
 from scipy.optimize import curve_fit
 import scipy.interpolate
 from scipy.integrate import cumtrapz,trapz
-#from galario import double as gdouble
 import time
 import uuid
 from vis_sample import vis_sample
@@ -258,7 +257,7 @@ def compare_vis_galario(datfile='alma.n2hdata',modfile='testpy_alma_n2h',new_wei
     chi = ((real_model-real_obj)**2*weight_real).sum() + ((imag_model-imag_obj)**2*weight_imag).sum()
     return chi
 
-def compare_vis_sample(datfile='alma.n2hdata',modfile='testpy_alma_n2h',new_weight=[1,],systematic=False,isgas=True,plot_resid=False):
+def compare_vis_sample(datfile='alma.n2hdata',modfile='testpy_alma_n2h',new_weight=[1,],systematic=False,isgas=True,plot_resid=False,covariance=False):
     '''Calculate the raw chi-squared based on the difference between the model and data visibilities. This function uses vis_sample to perform this calculation.'''
 
     # - Read in object visibilities
@@ -333,8 +332,71 @@ def compare_vis_sample(datfile='alma.n2hdata',modfile='testpy_alma_n2h',new_weig
         plt.show()
 
 
+    if covariance:
+        #Use the covariance matrix between neighboring channels.
+        print('Starting lnL summation')
+        nvis, nchans = real_model.shape
+        
+        #scov = np.zeros((nvis*nchans,nvis*nchans))
+        #scov_sub = (3./8)*np.eye(nchans)+(1./4)*(np.eye(nchans,k=1)+np.eye(nchans,k=-1))+(1./16)*(np.eye(nchans,k=2)+np.eye(nchans,k=-2))
+        #for i in range(nchans/2,nvis*nchans,(nchans-1)*(nchans-1)):
+        #    scov[i-nchans:i+nchans,i-nchans:i+nchans] = scov_sub
+        
+        #ivis = 0
+        #resid_real = np.hstack(real_obj[0,:]-real_model[0,:])
+        #resid_imag = np.hstack(imag_obj[0,:]-imag_model[0,:])
+        #print('Full resid hstack shape: ',resid_real.shape)
+        #resid = np.hstack(real_obj[0,:]-real_model[0,:])
+        #print('Single vis hstack shape: ',resid.shape)
+        #scov_inv_vis = np.tile(scov_inv,(nvis,1,1))
+        #test = np.dot(scov_inv_vis,(weight_real*(real_obj-real_model)).T)
+        #print('shape of dot product: ',test.shape)
+        #test2 = np.tensordot(resid_real,test,axes=1)
+        #print(test2)
+        scov = (3./8)*np.eye(nchans)+(1./4)*(np.eye(nchans,k=1)+np.eye(nchans,k=-1))+(1./16)*(np.eye(nchans,k=2)+np.eye(nchans,k=-2))
+        scov = np.eye(nchans)
+        scov_inv = np.linalg.inv(scov)
+        chi = 0
+        resid_real = real_obj-real_model
+        resid_imag = imag_obj-imag_model
+        resid_real_stack = np.hstack(resid_real[0,:])
+        scov_inv_real = np.linalg.inv(scov*weight_real[0,0])
+        sgn_real,lndet_real=np.linalg.slogdet(scov*weight_real[0,0])
+        #chi += .5*(np.log(2*np.pi)*nchans+sgn_real*lndet_real)
+        chi += .5*np.tensordot(resid_real,np.dot(scov_inv_real,weight_real[0,0]*resid_real_stack),axes=1)
 
-    chi = ((real_model-real_obj)**2*weight_real).sum() + ((imag_model-imag_obj)**2*weight_imag).sum()
+        print(resid_real.shape,np.dot(scov_inv_real,weight_real[0,0]*resid_real_stack).shape)
+        print(chi)
+        #for ivis in range(nvis):
+            
+        #    if weight_real[ivis,0] != 0:
+        #        resid_real_stack = np.hstack(resid_real[ivis,:])
+        #        scov_inv_real = np.linalg.inv(scov*weight_real[ivis,0])
+        #        sgn_real,lndet_real=np.linalg.slogdet(scov*weight_real[ivis,0])
+        #        chi += .5*(np.log(2*np.pi)*nvis*nchans+sgn_real*lndet_real)
+        #        chi += .5*np.tensordot(resid_real,np.dot(scov_inv_real,weight_real[ivis,0]*resid_real_stack),axes=1)
+        #    if weight_imag[ivis,0] != 0:
+        #        resid_imag_stack = np.hstack(resid_imag[ivis,:])
+        #       scov_inv_imag = np.linalg.inv(scov*weight_imag[ivis,0])
+            
+        #        sgn_imag,lndet_imag=np.linalg.slogdet(scov*weight_imag[ivis,0])
+        #        chi += .5*(np.log(2*np.pi)*nvis*nchans+sgn_imag*lndet_imag)  
+        #        chi += .5*np.tensordot(resid_imag,np.dot(scov_inv_imag,weight_imag[ivis,0]*resid_imag_stack),axes=1)
+            #var = np.hstack(weight_real[ivis,0])
+            #print('Real weight: ',weight_real[ivis,0])
+            #print('real (obj, model): ',real_obj[ivis,:],real_model[ivis,:])
+            #print('resid: ',resid)
+            #print('weight*resid: ',weight_real[ivis,0]*resid)
+            #print('Dot product: ',np.dot(scov_inv,weight_real[ivis,0]*resid))
+            #print(np.tensordot(resid,np.dot(scov_inv,weight_real[ivis,0]*resid),axes=1))
+            #chi += .5*np.tensordot(resid_real,np.dot(scov_inv_real,weight_real[ivis,0]*resid_real_stack),axes=1)
+            #chi += .5*np.tensordot(resid_imag,np.dot(scov_inv_imag,weight_imag[ivis,0]*resid_imag_stack),axes=1)
+        print('shape of chi',chi.shape)
+        print('Done with lnL summation')
+    else:
+        print('Starting lnL summation')
+        chi = ((real_model-real_obj)**2*weight_real).sum() + ((imag_model-imag_obj)**2*weight_imag).sum()
+        print('Done with lnL summation')
     return chi
 
 def lnlike(p,highres=False,massprior=False,cleanup=True,systematic=False,line='n2h32',vcs=True,exp_temp=False,add_ring=False,use_galario=True):
@@ -366,7 +428,7 @@ def lnlike(p,highres=False,massprior=False,cleanup=True,systematic=False,line='n
     'yoff':p[6],
     'PA':154.8, #position angle, degrees
     'distance':144.5, #distance
-    'Rbreak': p[7]} #Radius of temperature break
+    'Rbreak': 200.} #Radius of temperature break
     if line.lower() =='co21' or line.lower()=='co32' or line.lower()=='svco21' or line.lower()=='n2h32' :
         params = [all_params['q'],all_params['Mdisk'],all_params['p'],all_params['Rin'],all_params['Rout'],all_params['Rc'],all_params['incl'],all_params['Mstar'],all_params['Xn2h'],all_params['vturb'],all_params['Zq0'],all_params['Tmid0'],all_params['Tatm0'],all_params['Tco'],all_params['Zabund'],all_params['Rabund'],all_params['handed'],all_params['Rbreak']]
     if all_params['Mdisk'] <0 or all_params['Mdisk']>all_params['Mstar'] or all_params['Rin']<0 or all_params['Rin']>all_params['Rout'] or all_params['Rout']<0 or all_params['Rc']<0 or all_params['Mstar']<0 or all_params['vturb']<0 or all_params['Zq0']<0 or all_params['Tmid0']<0 or all_params['Tmid0']>all_params['Tatm0'] or all_params['Tatm0']<0 or all_params['Zabund'][0]<0 or all_params['Zabund'][1]<0 or all_params['Zabund'][1]<all_params['Zabund'][0] or all_params['Rabund'][0]<0 or all_params['Rabund'][0]<all_params['Rin'] or all_params['Rabund'][0]>all_params['Rabund'][1] or all_params['Rabund'][1]<0 or all_params['Rabund'][1]>all_params['Rout']:
@@ -414,7 +476,7 @@ def lnlike(p,highres=False,massprior=False,cleanup=True,systematic=False,line='n
             disk_structure.set_obs(obs)
             disk_structure.set_rt_grid(vcs=vcs)
             disk_structure.set_line(line)
-            disk_structure.add_mol_ring(p[2],p[2]+50,3,100,10**(p[3])) #3,100 #.01, .79
+            disk_structure.add_mol_ring(p[2],p[2]+p[7],3,100,10**(p[3]),just_frozen=False) #3,100 #.01, .79 #Wring=50
             total_model(disk=disk_structure,chanmin=chanmin,nchans=nchans,chanstep=chanstep,offs=[xoff,yoff],modfile=modfile,imres=resolution,obsv=obsv,vsys=vsys,freq0=279.51170100,Jnum=2,distance=all_params['distance'],hanning=True,PA=all_params['PA'],bin=4)
             #if not use_galario:
             #    make_model_vis(datfile=datfile,modfile=modfile,isgas=True,freq0=279.51170100)

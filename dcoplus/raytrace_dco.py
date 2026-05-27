@@ -154,12 +154,12 @@ def dustmodel(disk,nu):
 
     return trapz(arg,S,axis=2),tau
 
-#datfile = 'alma.dcodata'
-#hdr=fits.getheader(datfile+'.vis.fits')
-#freq = (np.arange(hdr['naxis4'])+1-hdr['crpix4'])*hdr['cdelt4']+hdr['crval4']
-#obsv = (hdr['restfreq']-freq)/hdr['restfreq']*2.99e5
+datfile = 'alma.dcodata'
+hdr=fits.getheader(datfile+'.vis.fits')
+freq = (np.arange(hdr['naxis4'])+1-hdr['crpix4'])*hdr['cdelt4']+hdr['crval4']
+obsv = (hdr['restfreq']-freq)/hdr['restfreq']*2.99e5
 
-def total_model(disk,imres=0.03,distance=144.5,chanmin=-2.67,nchans=22,chanstep=0.254,flipme=True,Jnum=3,freq0=288.143858,xnpix=600,vsys=6.06,PA=154.8,offs=[0.0,0.0],modfile='testpy_alma',abund=1.,obsv=None,wind=False,isgas=True,includeDust=False,extra=0,bin=1,hanning=True):
+def total_model(disk,imres=0.03,distance=144.5,chanmin=-2.67,nchans=22,chanstep=0.254,flipme=True,Jnum=3,freq0=288.143858,xnpix=600,vsys=6.06,PA=154.8,offs=[0.0,0.0],modfile='testpy_alma',abund=1.,obsv=obsv,wind=False,isgas=True,includeDust=False,extra=0,bin=1,hanning=True):
     '''Run all of the model calculations given a disk object.
     Outputs are a fits file with the model images, along with visibility files (one in miriad format and one in fits format) for this model
 
@@ -356,7 +356,7 @@ def total_model(disk,imres=0.03,distance=144.5,chanmin=-2.67,nchans=22,chanstep=
                 flux_range(disk,cube3,r,height=True)
     if extra>2.5:
         print('*** Creating tau=1 image ***')
-        ztau1tot=np.zeros((disk.nphi,disk.nr,nchans))
+        ztau1tot=np.zeros((int(disk.nphi),int(disk.nr),int(nchans)))
         for i in range(int(nchans)):
             ztau1tot[:,:,i] = findtau1(disk,cube2[:,:,:,i],cube[:,:,i],cube3[:,:,:,i],flag=extra-3)
             #ztau1tot[:,:,i] = cube2[:,:,290,i]*Disk.AU
@@ -590,9 +590,9 @@ def findtau1(disk,tau,Inu,cube3,flag=0.):
             #    ztau1[iphi,ir] = -170*disk.AU
             #else:
             if np.float(flag)==0:
-                ztau1[iphi,ir]=np.interp(1,tau[iphi,ir,:],z[iphi,ir,:])#tau
+                ztau1[iphi,ir]=np.interp(.1,tau[iphi,ir,:],z[iphi,ir,:])#tau
             if (flag>0.) & (flag<0.2):
-                ztau1[iphi,ir]=np.interp(1,tau[iphi,ir,:],disk.T[iphi,ir,:],right=0.,left=0.)*disk.AU#temp at tau=1 surface (multiplying by AU is because code after this assumes that it is actually height of tau=1 surface)
+                ztau1[iphi,ir]=np.interp(.1,tau[iphi,ir,:],disk.T[iphi,ir,:],right=0.,left=0.)*disk.AU#temp at tau=1 surface (multiplying by AU is because code after this assumes that it is actually height of tau=1 surface)
             #ztau1[iphi,ir] = np.interp(10,tau[iphi,ir,:],cube3[iphi,ir,:])*disk.AU
             #ztau1[iphi,ir] = np.sum(disk.T[iphi,ir,:]*tau[iphi,ir,:])/np.sum(tau[iphi,ir,:])*disk.AU
             if flag>0.1:

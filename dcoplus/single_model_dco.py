@@ -6,9 +6,10 @@ from raytrace_dco import *
 from scipy.optimize import curve_fit
 import scipy.interpolate
 from scipy.integrate import cumtrapz,trapz
-from galario import double as gdouble
+#from galario import double as gdouble
 import time
 import uuid
+from vis_sample import vis_sample
 
 
 ##############################################################################
@@ -18,6 +19,86 @@ def make_model_vis(datfile='alma.dcodata',modfile='testpy_alma_dco',isgas=True,f
     else:
         cmd = ' ./sample_cont.csh '+modfile+' '+datfile+' '+str(freq0)
     os.system(cmd)
+
+def compare_vis_sample(datfile='alma.n2hdata',modfile='testpy_alma_n2h',new_weight=[1,],systematic=False,isgas=True,plot_resid=False):
+    '''Calculate the raw chi-squared based on the difference between the model and data visibilities. This function uses vis_sample to perform this calculation.'''
+
+    # - Read in object visibilities
+    obj = fits.open(datfile+'.vis.fits')
+    vis_obj = (obj[0].data['data']).squeeze()
+    if isgas:
+        if obj[0].header['telescop'] == 'ALMA':
+            if obj[0].header['naxis3'] == 2:
+                real_obj = (vis_obj[:,:,0,0]+vis_obj[:,:,1,0])/2.
+                imag_obj = (vis_obj[:,:,0,1]+vis_obj[:,:,1,1])/2.
+                weight_real = vis_obj[:,:,0,2]
+                weight_imag = vis_obj[:,:,1,2]
+            else:
+                real_obj = vis_obj[::2,:,0]
+                imag_obj = vis_obj[::2,:,1]
+    else:
+        if obj[0].header['telescop'] == 'ALMA':
+            if obj[0].header['naxis3'] == 2:
+                real_obj = (vis_obj[:,0,0]+vis_obj[:,1,0])/2.
+                imag_obj = (vis_obj[:,0,1]+vis_obj[:,1,1])/2.
+                weight_real = vis_obj[:,0,2]
+                weight_imag = vis_obj[:,1,2]
+
+    obj.close()
+
+    # - Generate model visibilities
+    model_vis = vis_sample(uvfile=datfile+'.vis.fits',imagefile=modfile+'.fits',mod_interp=False)
+    real_model = model_vis.real
+    imag_model = model_vis.imag
+
+    if systematic:
+        real_model = real_model/systematic
+        imag_model = imag_model/systematic
+
+    if len(new_weight)>1:
+        weight_real = new_weight
+        weight_imag = new_weight
+
+    weight_real[real_obj==0] = 0.
+    weight_imag[imag_obj==0] = 0.
+    print('Removed data %i' % ((weight_real ==0).sum()+(weight_imag==0).sum()))
+
+    if plot_resid:
+        #Code to plot, and fit, residuals
+        #If errors are Gaussian, then residuals should have gaussian shape
+        #If error size is correct, residuals will have std=1
+        obj = fits.open(datfile+'.vis.fits')
+        freq0 = obj[0].header['crval4']
+        u_obj,v_obj = (obj[0].data['UU']*freq0).astype(np.float64),(obj[0].data['VV']*freq0).astype(np.float64)
+        vis_obj = (obj[0].data['data']).squeeze()
+        obj.close()
+        uv = np.sqrt(u_obj**2+v_obj**2)
+        use = (weight_real > .05) & (weight_imag>.05)
+        diff = np.concatenate((((real_model[use]-real_obj[use])*np.sqrt(weight_real[use])),((imag_model[use]-imag_obj[use])*np.sqrt(weight_imag[use]))))
+        diff = diff.flatten()
+        n,bins,patches = plt.hist(diff,10000,density=1,histtype='step',color='k',label='Data',lw=3)
+        popt,pcov = curve_fit(gaussian,bins[1:],n)
+        y=gaussian(bins,popt[0],popt[1],popt[2])
+        print('Gaussian fit parameters (amp,width,center): ',popt)
+        print('If errors are properly scaled, then width should be close to 1')
+        plt.plot(bins,y,'r--',lw=6,label='gaussuian')
+        #slight deviations from gaussian, but gaussian is still the best...
+        plt.xlabel('(Model-Data)/$\sigma$',fontweight='bold',fontsize=20)
+        ax=plt.gca()
+        for tick in ax.xaxis.get_major_ticks():
+            tick.label1.set_fontsize(20)
+            tick.label1.set_fontweight('bold')
+        for tick in ax.yaxis.get_major_ticks():
+            tick.label1.set_fontsize(20)
+            tick.label1.set_fontweight('bold')
+
+        plt.show()
+
+
+
+    chi = ((real_model-real_obj)**2*weight_real).sum() + ((imag_model-imag_obj)**2*weight_imag).sum()
+    return chi
+
 
 def compare_vis(datfile='alma.dcodata',modfile='testpy_alma_dco',new_weight=[1,],systematic=False,isgas=True,plot_resid=False):
     '''Calculate the raw chi-squared based on the difference between the model and data visibilities.
@@ -255,35 +336,36 @@ def compare_vis_galario(datfile='alma.dcodata',modfile='testpy_alma_dco',new_wei
     chi = ((real_model-real_obj)**2*weight_real).sum() + ((imag_model-imag_obj)**2*weight_imag).sum()
     return chi
 
-def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,exp_temp=False,add_ring=False,use_galario=True):
+def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,exp_temp=False,add_ring=False,use_galario=False):
     '''Calculate the log-likelihood (=-0.5*chi-squared) for a given model. p=[q,log(mdisk),log(rc),log(vturb/cco),Zq,Tatm,pp,Tmid,incl,gain]'''
 
     start=time.time()
     all_params = {
-    'q':p[0], #q
+    'q':(-.371,-.371,0), #p[0], #q
     'Mdisk':0.04, #solar masses
     'p':1, #gamma
     'Rin':1., #Model inner domain - generally no need to change
     'Rout':1000., #Model outer domain - generally no need to change
-    'Rc':10**(p[1]), #Rc
+    'Rc':10**(2.444), #10^(p[1]), #Rc
     'incl':-36,#-36, #inclination, degrees
     'Mstar':0.54, #solar masses
-    'Xdco':[10**(p[2]),10**(p[3]),10**(p[4])], #Abundance
-    'vturb':p[5], #turbulence, as a fraction of the thermal broadening for this line
+    'Xdco':[10**(p[0]),10**(p[1]),10**(p[2])], #Abundance
+    'vturb':p[4], #turbulence, as a fraction of the thermal broadening for this line
     'Zq0':70., #Zq0
-    'Tmid0':p[6], #K
-    'Tatm0':24.68,#K
+    'Tmid0':14.3, #p[6], #K
+    'Tatm0':14.3, #24.68,#K
     'Zabund':[.79,1000], #upper and lower boundaries in column density
     'Rabund':[10.,1000.], #inner and outer boundaries for abundance
     'handed':-1, #handed
     'vsys':5.95,#6.06, #systemic velocity, km/s
-    'offs':[0.,0.], #position offset, arcseconds
+    'offs':[p[5],p[6]], #position offset, arcseconds
     'PA':154.8, #position angle, degrees
     'distance':144.5, #distance
-    'Rbreak':p[7]} #Radius of temperature break
+    'Rbreak':200} #Radius of temperature break
     if line.lower() =='co21' or line.lower()=='co32' or line.lower()=='svco21' or line.lower()=='dco':
         params = [all_params['q'],all_params['Mdisk'],all_params['p'],all_params['Rin'],all_params['Rout'],all_params['Rc'],all_params['incl'],all_params['Mstar'],all_params['Xdco'],all_params['vturb'],all_params['Zq0'],all_params['Tmid0'],all_params['Tatm0'],all_params['Zabund'],all_params['Rabund'],all_params['handed'],all_params['Rbreak']]
     if all_params['Mdisk'] <0 or all_params['Mdisk']>all_params['Mstar'] or all_params['Rin']<0 or all_params['Rin']>all_params['Rout'] or all_params['Rout']<0 or all_params['Rc']<0 or all_params['Mstar']<0 or all_params['vturb']<0 or all_params['Zq0']<0 or all_params['Tmid0']<0 or all_params['Tmid0']>all_params['Tatm0'] or all_params['Tatm0']<0 or all_params['Zabund'][0]<0 or all_params['Zabund'][1]<0 or all_params['Zabund'][1]<all_params['Zabund'][0] or all_params['Rabund'][0]<0 or all_params['Rabund'][0]<all_params['Rin'] or all_params['Rabund'][0]>all_params['Rabund'][1] or all_params['Rabund'][1]<0 or all_params['Rabund'][1]>all_params['Rout']:
+        print(all_params)
         chi = np.inf
         nu = 1
     else:
@@ -328,10 +410,10 @@ def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='
             disk_structure.set_obs(obs)
             disk_structure.set_rt_grid(vcs=vcs)
             disk_structure.set_line(line)
-            disk_structure.add_mol_ring(325,375,0.79,3.,all_params['Xdco'][2],just_frozen=False) #.79,3, 325,375
+            disk_structure.add_mol_ring(p[3],p[3]+50,.79,3.,all_params['Xdco'][2],just_frozen=True) #.79,3, 325,375
             total_model(disk=disk_structure,chanmin=chanmin,nchans=nchans,chanstep=chanstep,offs=offs,modfile=modfile,imres=resolution,obsv=obsv,vsys=vsys,freq0=288.143858,Jnum=3,distance=all_params['distance'],hanning=True,PA=all_params['PA'],bin=2)
-            if not use_galario:
-                make_model_vis(datfile=datfile,modfile=modfile,isgas=True,freq0=288.143858)
+            #if not use_galario:
+            #    make_model_vis(datfile=datfile,modfile=modfile,isgas=True,freq0=288.143858)
 
 
 
@@ -341,7 +423,8 @@ def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='
             sys = None
 
         if not use_galario:
-            chi = compare_vis(datfile=datfile,modfile=modfile,systematic=sys,new_weight=new_weight)
+            #chi = compare_vis(datfile=datfile,modfile=modfile,systematic=sys,new_weight=new_weight)
+            chi = compare_vis_sample(datfile=datfile,modfile=modfile,systematic=sys)
         else:
             chi = compare_vis_galario(datfile=datfile,modfile=modfile,systematic=sys)
 
