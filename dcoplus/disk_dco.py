@@ -8,13 +8,6 @@
 # import disk
 # x = disk.Disk()
 
-#to reload the package, after making changes
-#from importlib import reload
-#reload(disk)
-
-#under python 3.7, creating a disk object takes 63.7 seconds
-#under python 2.7, creating a disk object takes 64.5 seconds
-#disk_pow also takes one less second. disk_ecc runs ten seconds faster under python 3.7. debris_disk_ecc runs 6 seconds faster under python 3.7.
 
 import math
 import numpy as np
@@ -140,8 +133,7 @@ class Disk:
         # use Dartois (03) type II temperature structure
         delta = 1.                # shape parameter
         zq = self.zq0*Disk.AU*(rcf/(150*Disk.AU))**1.3 #1.3
-        #tmid = self.tmid0*(rcf/(150*Disk.AU))**self.qq#[0] #******************#
-        #tatm = self.tatm0*(rcf/(150*Disk.AU))**self.qq#[1] #******************#
+
         #Added double power law for DM Tau (KMF: Oct 2022)
         if len(self.qq)>1:
             Rbreak = 200.
