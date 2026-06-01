@@ -85,28 +85,13 @@ def write_model_vis_sample(file,modfile,model_vis_file = 'alma.model.vis.fits'):
     os.system('rm -rf '+model_vis_file)
     vis_sample(imagefile=modfile,uvfile=file,outfile=model_vis_file,mod_interp=False)
 
-def im_plot_spec(file='data/HD163296.CO32.regridded.cen15.cm.fits',size=10,fwhm=False,gain=1.,threshold=None,norm_peak=False,mirror=False,line='co21',show_cloud=False,skip2 = False,**kwargs):
+def im_plot_spec(file='data/HD163296.CO32.regridded.cen15.cm.fits',size=10,fwhm=False,gain=1.,threshold=None,norm_peak=False,mirror=False,line='co21',**kwargs):
     'Given an image, plot the spectrum based on averaging over a given image area'
 
 
 
     # - Read in the data
     im,data,hdr,ra,dec,noise = get_cropped_image(file,size)
-    #im = fits.open(file)
-    #data = im[0].data.squeeze()
-    #hdr = im[0].header
-    ##noise = np.std(data[:,:,:10])
-    #noise = calc_noise(data,np.round(size/(3600.*hdr['cdelt1'])))
-    #ra = 3600*hdr['cdelt1']*(np.arange(hdr['naxis1'])-hdr['naxis1']/2.-0.5)
-    #dec = 3600*hdr['cdelt2']*(np.arange(hdr['naxis2'])-hdr['naxis2']/2.-0.5)
-    #offs = [.0,.0]
-    #offs=[3.,0.]
-    #ira = np.abs(ra-offs[0]) < size/2.
-    #ide = np.abs(dec-offs[1]) < size/2.
-    #data = data[:,:,ira]
-    #data = data[:,ide,:]
-    #npix = ira.sum()*ide.sum()
-    data *= gain
     noise *= gain
 
     #If displaying a model, convert flux from Jy/beam to Jy/pixel
@@ -155,11 +140,7 @@ def im_plot_spec(file='data/HD163296.CO32.regridded.cen15.cm.fits',size=10,fwhm=
         xaxis = xaxis[::-1]-.25#-.1
 
     plt.rc('axes',lw=2)
-    if skip2:
-        #skip the last two channels
-        plt.plot(xaxis[:-2],spec[:-2],lw=4,**kwargs)
-    else:
-        plt.plot(xaxis,spec,lw=4,**kwargs)
+    plt.plot(xaxis,spec,lw=4,**kwargs)
     ax = plt.gca() #apply_aspect,set_adjustable,set_aspect,get_adjustable,get_aspect
     for tick in ax.xaxis.get_major_ticks():
         tick.label1.set_fontsize(14)
@@ -172,14 +153,9 @@ def im_plot_spec(file='data/HD163296.CO32.regridded.cen15.cm.fits',size=10,fwhm=
         plt.ylabel('Normalized Flux',fontweight='bold',fontsize=14)
     else:
         plt.ylabel('Flux (Jy)',fontweight='bold',fontsize=14)
-    if show_cloud:
-        #Highlight the region affected by foreground absorption
-        plt.fill_between([4,6],[plt.ylim()[0],plt.ylim()[0]],[plt.ylim()[1],plt.ylim()[1]],alpha=.2,color='k')
+
     im.close()
 
-    #print(xaxis)
-    #print(xaxis[:49],xaxis[98:])
-    #print(xaxis[:14],xaxis[27:])
 
     if fwhm:
         #Calculate the fwhm of the line
@@ -247,14 +223,7 @@ def calc_noise(image,imx=10):
             noise4[i] = np.std(image[i,npix//2+imx//2:high,npix//2+imx//2:high])
             noise5[i] = np.std(image[i,low:high,low:high])
             noise[i] = np.mean([noise1[i],noise2[i],noise3[i],noise4[i]])
-        #flux = np.array([image[i,low:npix/2-imx/2,low:npix/2-imx/2],image[i,low:npix/2-imx/2,npix/2+imx/2:high],image[i,npix/2+imx/2:high,low:npix/2-imx/2],image[i,npix/2+imx/2:high,npix/2+imx/2:high]])
-        #print('N>3sigma:',float((np.abs(flux.flatten())>3*noise[i]).sum())/flux.flatten().shape[0])
-        #print('N>1sigma:',float((np.abs(flux.flatten())>noise[i]).sum())/flux.flatten().shape[0]) #The number of 3sigma and 1sigma peaks in all the lines is consistent with what we would expect from gaussian statistics
-
-    #print(noise1,noise2,noise3,noise4)
-    #print(noise5.mean(),noise5)
-    #noise from boxes around the disk has similar noise to boxes centered in image, but using line free channels (noise=6.84e-5,6.53e-5 Jy/pixel for two scenarios). No strong channel dependence when looking at the line-free channels
-
+     
         return np.mean([noise1,noise2,noise3,noise4])
     else:
         imx=int(np.abs(imx))
@@ -293,96 +262,35 @@ def plot_temp_av2(model='cofid'):
         dcofile = 'cofid/alma.dco_cofid.model_M0.fits'
         label = 'CO-derived'
         Tmid=14.3
-    if model == 'warmout':
-        q = [-.371,1.7,2] #fiducial model, photod
-        n2hfile = 'alma.n2h_warmout.model_M0.fits'
-        dcofile = 'DCO_code/alma.dco_warmout.model_M0.fits'
-        label = '70% warmer outer disk'
-        Tmid=14.3
+
     if model =='smallwarmout':
         q = [-.371,1.3,2] #fiducial model, photod
         n2hfile = 'smallwarmout/alma.n2h_smallwarmout.model_M0.fits'
         dcofile = 'smallwarmout/alma.dco_smallwarmout.model_M0.fits'
         label = '30% warmer outer disk'
         Tmid=14.3
-    if model =='warmout':
-        q = [-.371,1.5,2] #fiducial model, photod
-        n2hfile = 'warmout/alma.n2h_warmout.model_M0.fits'
-        dcofile = 'warmout/alma.dco_warmout.model_M0.fits'
-        label = '50% warmer outer disk'
-        Tmid=14.3
-    if model =='photodwarmout':
-        q = [-.371,1.5,2] #fiducial model, photod
-        n2hfile = 'alma.n2h.warmout.photodlow_M0.fits'
-        dcofile = 'DCO_code/alma.dco.warmout.photod_M0.fits'
-        label = 'Model'
-        Tmid=14.3
-    if model =='photodwarmoutmid0p15':
-        q = [-0.15,-.371,4,1.5] #fiducial model, photod
-        n2hfile = 'alma.n2h.warmout.mid0p15_M0.fits'
-        dcofile = 'DCO_code/alma.dco.warmout.mid0p15.photod_M0.fits'
-        label = '50% warmer outer disk, Photodesorption'
-        Tmid=14.3
-    if model =='photodwarmoutmid0p5':
-        q = [-0.5,-.371,4,1.5] #fiducial model, photod
-        n2hfile = 'alma.n2h.warmout.mid0p5_M0.fits'
-        dcofile = 'DCO_code/alma.dco.warmout.mid0p5.photod_M0.fits'
-        label = '50% warmer outer disk, Photodesorption'
-        Tmid=14.3
-    if model == 'photod':
-        q = [-.371,-.371,0] #fiducial model, photod
-        n2hfile = 'alma.n2h.photodlow_M0.fits'
-        dcofile = 'DCO_code/alma.dco.photod_M0.fits'
-        label = 'Photodesorbtion'
-        Tmid=14.3
+
     if model == 'lowphotod':
         q = [-.371,-.371,0] #fiducial model, photod
         n2hfile = 'lowphotod/alma.n2h_lowphotod.model_M0.fits'
         dcofile = 'lowphotod/alma.dco_photod.model_M0.fits'
         label = 'Photodesorbtion'
         Tmid=14.3
+
     if model == 'highphotod':
         q = [-.371,-.371,0] #fiducial model, photod
         n2hfile = 'highphotod/alma.n2h_highphotod.model_M0.fits'
         dcofile = 'lowphotod/alma.dco_photod.model_M0.fits'
         label = 'Photodesorbtion'
         Tmid=14.3
+
     if model == 'midflat':
         q = [0,-.371,3] #fiducial model, photod
         n2hfile = 'midflat/alma.n2h_midflat.model_M0.fits'
         dcofile = 'midflat/alma.dco_midflat.model_M0.fits'
         label = 'q$_{mid}$=0'
         Tmid=14.3
-    if model =='smallwarmoutmidflat':
-        q = [0.,-.371,4,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.smallwarmout.midflat_M0.fits'
-        dcofile = 'DCO_code/alma.dco.smallwarmout.midflat_M0.fits'
-        label = '30% warmer outer disk'
-        Tmid=14.3
-    if model =='smallwarmoutmid0p15':
-        q = [-0.15,-.371,4,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.smallwarmout.mid0p15_M0.fits'
-        dcofile = 'DCO_code/alma.dco.smallwarmout.mid0p15_M0.fits'
-        label = '30% warmer outer disk'
-        Tmid=14.3
-    if model =='midcold':
-        q = [-.371,-0.371,0,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.midcold_M0.fits'
-        dcofile = 'DCO_code/alma.dco.midcold_M0.fits'
-        label = 'T$_{mid}$=10 K'
-        Tmid = 10.
-    if model =='midcoldsmallwarmout':
-        q = [-.371,-0.371,0,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.midcold.smallwarmout_M0.fits'
-        dcofile = 'DCO_code/alma.dco.midcold.smallwarmout_M0.fits'
-        label = 'T$_{mid}$=10 K'
-        Tmid = 10.
 
-
-    #q = [-.371,-.371,0] #fiducial model, photod
-    #q = [-.371,1.3,2] #smallwarmout
-    #q = [-.371,1.7,2] #warmout
-    #q = [0,-.371,3] #midflat
 
     params = [q, #qq
               0.04,#10**(p[1]), #Mdisk
@@ -527,79 +435,27 @@ def plot_chan_n2models(model='cofid',include_fluxscale=False):
         dcofile = 'smallwarmout/alma.dco_smallwarmout.model.fits'
         label = '30% warmer outer disk'
         Tmid=14.3
-    if model =='warmout':
-        q = [-.371,1.5,2] #fiducial model, photod
-        n2hfile = 'warmout/alma.n2h_warmout.model.fits'
-        dcofile = 'warmout/alma.dco_warmout.model.fits'
-        label = '50% warmer outer disk'
-        Tmid=14.3
-    if model =='photodwarmout':
-        q = [-.371,1.5,2] #fiducial model, photod
-        n2hfile = 'alma.n2h.warmout.photodlow.fits'
-        dcofile = 'DCO_code/alma.dco.warmout.photod.fits'
-        label = 'Model'
-        Tmid=14.3
-    if model =='photodwarmoutmid0p15':
-        q = [-0.15,-.371,4,1.5] #fiducial model, photod
-        n2hfile = 'alma.n2h.warmout.mid0p15.fits'
-        dcofile = 'DCO_code/alma.dco.warmout.mid0p15.photod.fits'
-        label = '50% warmer outer disk, Photodesorption'
-        Tmid=14.3
-    if model =='photodwarmoutmid0p5':
-        q = [-0.5,-.371,4,1.5] #fiducial model, photod
-        n2hfile = 'alma.n2h.warmout.mid0p5.fits'
-        dcofile = 'DCO_code/alma.dco.warmout.mid0p5.photod.fits'
-        label = '50% warmer outer disk, Photodesorption'
-        Tmid=14.3
-    if model == 'photod':
-        q = [-.371,-.371,0] #fiducial model, photod
-        n2hfile = 'alma.n2h.photodlow.fits'
-        dcofile = 'DCO_code/alma.dco.photod.fits'
-        label = 'Photodesorbtion'
-        Tmid=14.3
+
     if model == 'lowphotod':
         q = [-.371,-.371,0] #fiducial model, photod
         n2hfile = 'lowphotod/alma.n2h_lowphotod.model.fits'
         dcofile = 'lowphotod/alma.dco_photod.model.fits'
         label = 'Photodesorbtion'
         Tmid=14.3
+
     if model == 'highphotod':
         q = [-.371,-.371,0] #fiducial model, photod
         n2hfile = 'highphotod/alma.n2h_highphotod.model.fits'
         dcofile = 'lowphotod/alma.dco_photod.model.fits'
         label = 'Photodesorbtion'
         Tmid=14.3
+
     if model == 'midflat':
         q = [0,-.371,3] #fiducial model, photod
         n2hfile = 'midflat/alma.n2h_midflat.model.fits'
         dcofile = 'midflat/alma.dco_midflat.model.fits'
         label = 'q$_{mid}$=0'
         Tmid=14.3
-    if model =='smallwarmoutmidflat':
-        q = [0.,-.371,4,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.smallwarmout.midflat.fits'
-        dcofile = 'DCO_code/alma.dco.smallwarmout.midflat.fits'
-        label = '30% warmer outer disk'
-        Tmid=14.3
-    if model =='smallwarmoutmid0p15':
-        q = [-0.15,-.371,4,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.smallwarmout.mid0p15.fits'
-        dcofile = 'DCO_code/alma.dco.smallwarmout.mid0p15.fits'
-        label = '30% warmer outer disk'
-        Tmid=14.3
-    if model =='midcold':
-        q = [-.371,-0.371,0,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.midcold.fits'
-        dcofile = 'DCO_code/alma.dco.midcold.fits'
-        label = 'T$_{mid}$=10 K'
-        Tmid = 10.
-    if model =='midcoldsmallwarmout':
-        q = [-.371,-0.371,0,1.3] #fiducial model, photod
-        n2hfile = 'alma.n2h.midcold.smallwarmout.fits'
-        dcofile = 'DCO_code/alma.dco.midcold.smallwarmout.fits'
-        label = 'T$_{mid}$=10 K'
-        Tmid = 10.
-
 
     data = fits.open('alma.n2hdata.fits')
     model = fits.open('radialprofilesandmomentmaps/radprofile_models/'+n2hfile)

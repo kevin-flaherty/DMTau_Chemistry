@@ -1,43 +1,47 @@
 # DM Tau chemistry code
 
 ## Contents
-This repository contains the code used by Diop et al. to model and analyze ALMA observations of the N2H+(4-3) and DCO+(3-2) emission from around DM Tau obtained as part of 2018.1.01119.S (PI: K. Flaherty).
+This repository contains the code used by Diop et al. to model and analyze ALMA observations of the N2H+(4-3) and DCO+(3-2) emission from around DM Tau.
 
-In particular the code models the emission from N2H+ and DCO+ under various conditions (e.g. a warm outer midplane, CO photo-desorption). The underlying disk model is based on a parametric structure described in more detail in Diop et al., as well as in Flaherty et al. 2020 (which in turn is based on earlier work by Dartois et al. 2003 and Rosenfeld et al. 2013).
+In particular the code models the emission from N2H+ and DCO+ under various conditions (e.g. a warm outer midplane, CO photo-desorption). The underlying disk model is based on a parametric structure described in more detail in Diop et al., as well as in Flaherty et al. 2020 (which in turn is based on earlier work by Dartois et al. 2003 and Rosenfeld et al. 2013), and . The code included here is used to generate the models shown in Figures 4 and 5 is discussed in section 4, and whose parameters are listed in Table 2 and Appendix A. 
 
 This repository contains three folders. The folders *n2hplus* and *dcoplus* contain the code used to model N2H+ and DCO+ respectively. The folder *models* contains documents describing the exact function calls used to generate the models discussed in the paper.
 
 **n2hplus**:
-- *disk.py*: Code for calculating density, temperature, and velocity at r,z throughout the disk, based on the input parametric structure.
-- *raytrace.py*: Takes as input a disk object created by disk.py, and performs radiative transfer to create an image at a specified velocity/spatial resolution, distance, position angle, etc.
-- *single_model.py*: Wrapper for raytrace.py and disk.py. Given a particular set of parameters, functions within single_model.py will create a model image and compare the visibilities from this image to the data.
+- *disk.py*: Python code for calculating density, temperature, and velocity at r,z throughout the disk, based on the input parametric structure.
+- *raytrace.py*: Python code that takes as input a disk object created by disk.py, and performs radiative transfer to create an image at a specified velocity/spatial resolution, distance, position angle, etc.
+- *single_model.py*: Python wrapper for raytrace.py and disk.py. Given a particular set of parameters, functions within single_model.py will create a model image and compare the visibilities from this image to the data.
 - *make_model_image.py*: CASA commands for creating cleaned model channel maps from model visibilities.
 - *make_diff_image.py*: CASA commands for created cleaned residual channel maps from the difference in visibilities between the model and data.
-- *n2h.dat*: Molecular constants
-- *run_downhill_n2h.py*: Function for running downhill simplex fitting of the model to the N2H+ data.
+- *n2h.dat*: Text file containing molecular constants for N2H+.
+- *run_downhill_n2h.py*: Python function for running downhill simplex fitting of the model to the N2H+ data.
 
 **dcoplus**:
-- *disk.py*: Code for calculating density, temperature, and velocity at r,z throughout the disk, based on the input parametric structure.
-- *raytrace.py*: Takes as input a disk object created by disk.py, and performs radiative transfer to create an image at a specified velocity/spatial resolution, distance, position angle, etc.
-- *single_model_dco.py*: Wrapper for raytrace.py and disk.py. Given a particular set of parameters, functions within single_model_dco.py will create a model image and compare the visibilities from this image to the data.
+- *disk.py*: Python code for calculating density, temperature, and velocity at r,z throughout the disk, based on the input parametric structure.
+- *raytrace.py*: Python code that takes as input a disk object created by disk.py, and performs radiative transfer to create an image at a specified velocity/spatial resolution, distance, position angle, etc.
+- *single_model_dco.py*: Python wrapper for raytrace.py and disk.py. Given a particular set of parameters, functions within single_model_dco.py will create a model image and compare the visibilities from this image to the data.
 - *make_model_image_dco.py*: CASA commands for creating cleaned model channel maps from model visibilities.
 - *make_diff_image_dco.py*: CASA commands for created cleaned residual channel maps from the difference in visibilities between the model and data.
-- *dco.dat*: Molecular constants
-- *run_downhill_dco.py*: Function for running downhill simplex fitting of the model to the DCO+ data.
+- *dcoplus.dat*: Text file containing molecular constants fir DCO+.
+- *run_downhill_dco.py*: Python function for running downhill simplex fitting of the model to the DCO+ data.
 
 **Models**:
-- *cofid.txt*: Code used to generate the CO-fiducial model, i.e. the model based the structure derived from CO, with no further modifications.
-- *midflat.txt*: Code used to generate the model with a midplane radial temperature profile that is shallower than at the surface layers.
-- *smallwarmout.txt*: Code used to generate models in which the midplane temperature beyond 200 au is increased by 30%.
-- *highphotod.txt*: Code used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed high in the disk, mimicking the effect of CO photo-dissociation.
-- *lowphotod.txt*: Code used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed close to the midplane, mimicking the effect of additional ionization from X-rays or cosmic rays.
+- *cofid.txt*: Text file containing python function calls used to generate the CO-fiducial model, i.e. the model based the structure derived from CO, with no further modifications.
+- *midflat.txt*: Text file containing python function calls used to generate the model with a midplane radial temperature profile that is shallower than at the surface layers.
+- *smallwarmout.txt*: Text file containing python code function calls to generate models in which the midplane temperature beyond 200 au is increased by 30%.
+- *highphotod.txt*: Text file containg python function calls used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed high in the disk, mimicking the effect of CO photo-dissociation.
+- *lowphotod.txt*: Text file containing python function calls used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed close to the midplane, mimicking the effect of additional ionization from X-rays or cosmic rays.
+
+**Others**:
+- *helper.py*: Includes python functions for plotting the radial profile and spectra of a model.
+- *Authors.txt*: Text file containing the names of the authors that contributed to this code repository. 
 
 
 ## Usage
 
-The most direct way to generate models is using the *lnlike* function within *single_model.py* or *single_model_dco.py*. This function takes as an input a subset of model parameters, and calls functions within *disk.py* and *raytrace.py* to create a model image at the same spatial and spectral resolution as the data.
+The most direct way to generate the models used in Diop et al. is with the `lnlike` function within *single_model.py* or *single_model_dco.py*. This function takes as an input a subset of model parameters, and calls functions within *disk.py* and *raytrace.py* to create a model image at the same spatial and spectral resolution as the data. From this model image it calculates the log-likelihood of the model, by comparing the visibilities between the model and the data. 
 
-For N2H+ an example usage of the *lnlike* function is:
+For N2H+ an example usage of the `lnlike` function is:
 
 ```
 lnlike(((-.371,-.371,0),-11.1,325,-100,0.,0.,0.50.),cleanup=False)
@@ -48,7 +52,7 @@ The first element is a list of model parameters:
 ```
 [q,abund,Rring,abund2,turbulence, x-offset, y-offset, Rring_width]
 ```
-The abundance is the logarithm of the abundance relative to H2 (the first abundance is for the region with 19 < Tgas < 9 K, while the second abundance is for the outer ring), Rring is in units of au, turbulence is in units of the thermal broadening of N2H+, and the x and y offsets are in units of arc-seconds. Rring_width refers to the width of the outer ring, in units of au.
+The abundance is the logarithm of the abundance relative to H2 (the first abundance is for the region with 19 < Tgas < 9 K, while the second abundance is for the outer ring), `Rring` is in units of au, `turbulence` is in units of the thermal broadening of N2H+, and the x and y offsets are in units of arc-seconds. `Rring_width` refers to the width of the outer ring, in units of au.
 
 The first element in this list is `q`, which can take multiple forms, but is always a list. In the example above the first element of the list is the `q` value for the midplane, the second is the `q` value for the disk atmosphere, and the third is a flag (which can take values of 0, 1, 2, 3, or 4) which in this case specifies that the midplane and the atmosphere have the same temperature profile. The other values of this flag are:
 - `q=1`: a double power-law shape for the temperature profile (i.e. T $\sim$ r^(q1) inside of Rbreak and T $\sim$ r^(q2) outside of Rbreak)
@@ -71,7 +75,7 @@ where the list of input parameters is
 The parameters `q`, `Rring`, `x-offset`, and `y-offset` have the same behavior as above. The `turbulence` works as for N2H+, but its value is in units of the thermal speed of DCO+. The three abundances represent the abundance in (1) the warm pathway, (2) the cold pathway, (3) the CO photodissociation region.
 
 
-The text files within *Models* specify the different calls to *lnlike* that were used to generate different models.
+The text files within *Models* specify the different calls to `lnlike` that were used to generate different models.
 
 
 ## Dependencies
