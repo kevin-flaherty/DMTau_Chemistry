@@ -1,9 +1,9 @@
 # DM Tau chemistry code
 
 ## Contents
-This repository contains the code used by Diop et al. to model and analyze ALMA observations of the N2H+(4-3) and DCO+(3-2) emission from around DM Tau.
+This repository contains the code used by Diop et al. to model and analyze ALMA observations of the N2H+(4-3) and DCO+(3-2) emission from around DM Tau. These data were obtained as part of ALMA program 2018.1.01119.S.
 
-In particular the code models the emission from N2H+ and DCO+ under various conditions (e.g. a warm outer midplane, CO photo-desorption). The underlying disk model is based on a parametric structure described in more detail in Diop et al., as well as in Flaherty et al. 2020 (which in turn is based on earlier work by Dartois et al. 2003 and Rosenfeld et al. 2013), and . The code included here is used to generate the models shown in Figures 4 and 5 is discussed in section 4, and whose parameters are listed in Table 2 and Appendix A. 
+In particular the code models the emission from N2H+ and DCO+ under various conditions (e.g. a warm outer midplane, CO photo-desorption). The underlying disk model is based on a parametric structure described in more detail in Diop et al., as well as in Flaherty et al. 2020 (which in turn is based on earlier work by Dartois et al. 2003 and Rosenfeld et al. 2013), and stored in the [disk_model3 respository](https://github.com/kevin-flaherty/disk_model3). See these papers and the linked repository for the equations used in generating the model images. The code included here is used to generate the models shown in Figures 4 and 5, is discussed in section 4, and whose parameters are listed in Table 2 and Appendix A. 
 
 This repository contains three folders. The folders *n2hplus* and *dcoplus* contain the code used to model N2H+ and DCO+ respectively. The folder *models* contains documents describing the exact function calls used to generate the models discussed in the paper.
 

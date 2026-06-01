@@ -135,7 +135,7 @@ def lnlike(p,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,
     OUTPUTS:
     The code will print out the p array, the reduced chi-squared value, and the time it took to run the code. It will return the log-likelihood value. 
 
-    If cleanup=False then the code will retain the model image, in the file 'alma.fits'. If cleanup=True then the code will delete the model image.
+    If cleanup=False then the code will retain the model image, in the file 'alma.fits'. If cleanup=True then the code will delete the model image. The units for the model image are included in the fits file header; the flux units are Jy/pixel while the pixel size is matched to that of the data. 
 
     '''
 
