@@ -2,7 +2,7 @@
 
 
 #### Change the vertical boundaries in the outer ring to 3, 100
-lnlike(((-.371,-.371,0),-11.389,314.52,-10.81,0.,0.,0.,50.),cleanup=False)
+lnlike(((-.371,-.371,0),-11.37,277.9,-10.81,0.,0.,0.,50.),cleanup=False)
 write_model_vis('alma.n2hdata.vis.fits','alma.fits')
 ## execfile('make_model_image.py') ### Run in CASA
 mv alma.model.fits alma.n2h_lowphotod.model.fits
@@ -15,8 +15,8 @@ plt.figure()
 plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
 plot_profile('alma.n2h_lowphotod.model_Fnu.fits',overplot=True,norm_peak=True)
 
-#photodissociation ring from .79 to 3 in the vertical direction.
-lnlike(((-.371,-.371,0),2.444,-13.2692,-12.6592,-9.4898,0.,14.3,200))
+#photodissociation ring from .79 to 3 in the vertical direction. For DCO+, this is the same as for highphotd
+lnlike(((-.371,-.371,0),-13.27,-12.66,-9.49,238.7,0.,0.,0.),cleanup=False)
 write_model_vis('alma.dcodata.vis.fits','alma.fits')
 ## execfile('make_model_image.py') ### Run in CASA
 mv alma.model.fits alma.dco_photod.model.fits
@@ -26,7 +26,6 @@ im_plot_spec('alma.dco_photod.model.fits',color='r',ls='--',threshold=.0059,norm
 plt.legend(('$DCO^+$ Data','Photodesorption'),frameon=False,fontsize=14)
 #plt.text(4,.3,'$DCO^+$',fontsize=14)
 !bettermoments alma.dco_photod.model.fits -method quadratic -clip 3
-!bettermoments alma.dco_photod.model.fits -method zeroth -clip 3
 plot_profile('DCO_code/dco_I0.fits',norm_peak=True)
 plot_profile('DCO_code/alma.dco_photod.model_M0.fits',norm_peak=True,overplot=True)
 

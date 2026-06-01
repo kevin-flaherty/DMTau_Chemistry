@@ -341,7 +341,7 @@ def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='
 
     start=time.time()
     all_params = {
-    'q':(-.371,-.371,0), #p[0], #q
+    'q':p[0], #q
     'Mdisk':0.04, #solar masses
     'p':1, #gamma
     'Rin':1., #Model inner domain - generally no need to change
@@ -349,8 +349,8 @@ def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='
     'Rc':10**(2.444), #10^(p[1]), #Rc
     'incl':-36,#-36, #inclination, degrees
     'Mstar':0.54, #solar masses
-    'Xdco':[10**(p[0]),10**(p[1]),10**(p[2])], #Abundance
-    'vturb':p[4], #turbulence, as a fraction of the thermal broadening for this line
+    'Xdco':[10**(p[1]),10**(p[2]),10**(p[3])], #Abundance
+    'vturb':p[5], #turbulence, as a fraction of the thermal broadening for this line
     'Zq0':70., #Zq0
     'Tmid0':14.3, #p[6], #K
     'Tatm0':14.3, #24.68,#K
@@ -358,7 +358,7 @@ def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='
     'Rabund':[10.,1000.], #inner and outer boundaries for abundance
     'handed':-1, #handed
     'vsys':5.95,#6.06, #systemic velocity, km/s
-    'offs':[p[5],p[6]], #position offset, arcseconds
+    'offs':[p[6],p[7]], #position offset, arcseconds
     'PA':154.8, #position angle, degrees
     'distance':144.5, #distance
     'Rbreak':200} #Radius of temperature break
@@ -394,7 +394,7 @@ def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='
 
         # The next series of lines are very specific to the CO3-2 ALMA data for HD 163296, and would need to be modified to use another data set. Basically you need to set the keyword datfile, read in the weights, set the degrees of freedom, set the chanmin,nchans,chanstep keywords (specific to this spectra you are trying to simulate) as well as the image offset.
         if line.lower() == 'dco':
-            datfile = 'alma.dcodata'
+            datfile = '~/alma.dcodata'
             hdr=fits.getheader(datfile+'.vis.fits')
             nu = 2*hdr['naxis4']*hdr['gcount']-len(p)-2295568 #227478
             freq = (np.arange(hdr['naxis4'])+1-hdr['crpix4'])*hdr['cdelt4']+hdr['crval4']
@@ -410,7 +410,7 @@ def lnlike(p,highres=False,massprior=False,cleanup=False,systematic=False,line='
             disk_structure.set_obs(obs)
             disk_structure.set_rt_grid(vcs=vcs)
             disk_structure.set_line(line)
-            disk_structure.add_mol_ring(p[3],p[3]+50,.79,3.,all_params['Xdco'][2],just_frozen=True) #.79,3, 325,375
+            disk_structure.add_mol_ring(p[4],p[4]+50,.79,3.,all_params['Xdco'][2],just_frozen=True) #.79,3, 325,375
             total_model(disk=disk_structure,chanmin=chanmin,nchans=nchans,chanstep=chanstep,offs=offs,modfile=modfile,imres=resolution,obsv=obsv,vsys=vsys,freq0=288.143858,Jnum=3,distance=all_params['distance'],hanning=True,PA=all_params['PA'],bin=2)
             #if not use_galario:
             #    make_model_vis(datfile=datfile,modfile=modfile,isgas=True,freq0=288.143858)

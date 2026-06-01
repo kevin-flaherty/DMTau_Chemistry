@@ -14,7 +14,7 @@ plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
 plot_profile('alma.n2h_cofid.model_Fnu.fits',overplot=True,norm_peak=True)
 
 
-lnlike(((-.371,-.371,0),2.444,-13.5,-12.5,-20,0.,14.3,200.),cleanup=False)
+lnlike(((-.371,-.371,0),-13.53,-12.47,-20,325,0.,0.,0.),cleanup=False)
 write_model_vis('alma.dcodata.vis.fits')
 ## execfile('make_model_image.py') ### Run this command within CASA
 mv alma.model.fits alma.dco_cofid.model.fits

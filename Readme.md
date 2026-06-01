@@ -14,6 +14,7 @@ This repository contains three folders. The folders *n2hplus* and *dcoplus* cont
 - *make_model_image.py*: CASA commands for creating cleaned model channel maps from model visibilities.
 - *make_diff_image.py*: CASA commands for created cleaned residual channel maps from the difference in visibilities between the model and data.
 - *n2h.dat*: Molecular constants
+- *run_downhill_n2h.py*: Function for running downhill simplex fitting of the model to the N2H+ data.
 
 **dcoplus**:
 - *disk.py*: Code for calculating density, temperature, and velocity at r,z throughout the disk, based on the input parametric structure.
@@ -22,15 +23,15 @@ This repository contains three folders. The folders *n2hplus* and *dcoplus* cont
 - *make_model_image_dco.py*: CASA commands for creating cleaned model channel maps from model visibilities.
 - *make_diff_image_dco.py*: CASA commands for created cleaned residual channel maps from the difference in visibilities between the model and data.
 - *dco.dat*: Molecular constants
+- *run_downhill_dco.py*: Function for running downhill simplex fitting of the model to the DCO+ data.
 
 **Models**:
 - *cofid.txt*: Code used to generate the CO-fiducial model, i.e. the model based the structure derived from CO, with no further modifications.
 - *midflat.txt*: Code used to generate the model with a midplane radial temperature profile that is shallower than at the surface layers.
 - *smallwarmout.txt*: Code used to generate models in which the midplane temperature beyond 200 au is increased by 30%.
-- *warmout.txt*: Code used to generate models in which the midplane temperature beyond 200 au is increased by 50%.
 - *highphotod.txt*: Code used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed high in the disk, mimicking the effect of CO photo-dissociation.
 - *lowphotod.txt*: Code used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed close to the midplane, mimicking the effect of additional ionization from X-rays or cosmic rays.
-- *photod_warmout.txt*: Same as *lowphotod.txt*, but with an increase in the midplane temperature beyond 200 au.
+
 
 ## Usage
 
@@ -39,15 +40,15 @@ The most direct way to generate models is using the *lnlike* function within *si
 For N2H+ an example usage of the *lnlike* function is:
 
 ```
-lnlike(((-.371,-.371,0),-11.1,325,-100,0.,0.,0.200.),cleanup=False)
+lnlike(((-.371,-.371,0),-11.1,325,-100,0.,0.,0.50.),cleanup=False)
 ```
 
 The first element is a list of model parameters:
 
 ```
-[q,abund,Rc,abund2,turbulence, x-offset, y-offset, Rbreak]
+[q,abund,Rring,abund2,turbulence, x-offset, y-offset, Rring_width]
 ```
-The abundance is the logarithm of the abundance relative to H2 (the first abundance is for the region with 19 < Tgas < 9 K, while the second abundance is for the outer ring), Rc is in units of au, turbulence is in units of the thermal broadening of N2H+, and the x and y offsets are in units of arc-seconds. Rbreak refers to the radii beyond which e.g. the temperature jumps (see discussion of q).
+The abundance is the logarithm of the abundance relative to H2 (the first abundance is for the region with 19 < Tgas < 9 K, while the second abundance is for the outer ring), Rring is in units of au, turbulence is in units of the thermal broadening of N2H+, and the x and y offsets are in units of arc-seconds. Rring_width refers to the width of the outer ring, in units of au.
 
 The first element in this list is `q`, which can take multiple forms, but is always a list. In the example above the first element of the list is the `q` value for the midplane, the second is the `q` value for the disk atmosphere, and the third is a flag (which can take values of 0, 1, 2, 3, or 4) which in this case specifies that the midplane and the atmosphere have the same temperature profile. The other values of this flag are:
 - `q=1`: a double power-law shape for the temperature profile (i.e. T $\sim$ r^(q1) inside of Rbreak and T $\sim$ r^(q2) outside of Rbreak)
@@ -59,15 +60,15 @@ Any value of `q` that is not listed above will revert to the case where the midp
 
 For DCO+ the usage of `lnlike` is similar, but with a slightly different set of input parameters:
 ```
-lnlike(((-.371,-.371,0),2.444,-20,-10.4,-20,0.,14.3,200.))
+lnlike(((-.371,-.371,0),-20,-10.4,-20,200,0.,0.,0.))
 ```
 
 where the list of input parameters is
 ```
-[q, Rc, log(abund), log(abund2), log(abund3), turbulence, Tmid0, Rbreak]
+[q, log(abund), log(abund2), log(abund3), Rring, turbulence, x-offset, y-offset]
 ```
 
-The parameters `q`, `Rc`, and `Rbreak` have the same behavior as above. The `turbulence` works as for N2H+, but its value is in units of the thermal speed of DCO+. The three abundances represent the abundance in (1) the warm pathway, (2) the cold pathway, (3) the CO photodissociation region.
+The parameters `q`, `Rring`, `x-offset`, and `y-offset` have the same behavior as above. The `turbulence` works as for N2H+, but its value is in units of the thermal speed of DCO+. The three abundances represent the abundance in (1) the warm pathway, (2) the cold pathway, (3) the CO photodissociation region.
 
 
 The text files within *Models* specify the different calls to *lnlike* that were used to generate different models.
@@ -77,8 +78,14 @@ The text files within *Models* specify the different calls to *lnlike* that were
 Beyond standard packages (astropy, numpy, matplotlib, scipy) this code utilizes:
   - [vis_sample](https://github.com/AstroChem/vis_sample): For generating model visibilities using input model images.
   - [GoFish](https://fishing.readthedocs.io): For generating radial profiles.
+  - [bettermoments](https://github.com/PlanetFormationLab/bettermoments): For generating moment maps from the data, which are used for the radial profiles.
 
-Some of the functions reference the data, which has not been included in this repository, but is available upon request.
+## Data
+Some of the functions reference the data, which has not been included in this repository, but is available upon request. The data includes:
+- alma.n2hdata.fits: Cleaned images of N2H+ emission.
+- alma.n2hdata.vis.fits: N2H+ visibilities.
+- alma.dcodata.vis.fits: DCO+ visibilities.
+- dco.fits: Cleaned images of DCO+ emission.
 
 ## Disclaimer
 This code is provided 'as is'. It represents the code that was used to analyze the data, and generate many of the key figures. Its functionality has not been tested on other machines, and any questions should be directed to Amina Diop or Kevin Flaherty.
