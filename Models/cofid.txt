@@ -1,6 +1,9 @@
 #Model based on fiducial CO structure.
 
-lnlike(((-.371,-.371,0),-11.308,325,-100,0.,0.,0.,50.),cleanup=False)
+# Use the following command with an 18 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-11.24,325,-100,0.,0.,0.,50.),cleanup=False) 
+# Use the following command with a 20 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-11.24,325,-100,0.,0.,0.,50.),cleanup=False) 
 write_model_vis('alma.n2hdata.vis.fits','alma.fits')
 ## execfile('make_model_image.py') ### Run this command within CASA
 mv alma.model.fits alma.n2h_cofid.model.fits
@@ -14,7 +17,10 @@ plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
 plot_profile('alma.n2h_cofid.model_Fnu.fits',overplot=True,norm_peak=True)
 
 
-lnlike(((-.371,-.371,0),-13.53,-12.47,-20,325,0.,0.,0.),cleanup=False)
+# Use the following command with an 18 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-13.54,-12.45,-20,325,0.,0.,0.),cleanup=False) 
+# Use the following command with a 20 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-14.39,-11.91,-20,325,0.,0.,0.),cleanup=False) 
 write_model_vis('alma.dcodata.vis.fits')
 ## execfile('make_model_image.py') ### Run this command within CASA
 mv alma.model.fits alma.dco_cofid.model.fits

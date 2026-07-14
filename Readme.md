@@ -31,6 +31,7 @@ This repository contains three folders. The folders *n2hplus* and *dcoplus* cont
 - *smallwarmout.txt*: Text file containing python code function calls to generate models in which the midplane temperature beyond 200 au is increased by 30%.
 - *highphotod.txt*: Text file containg python function calls used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed high in the disk, mimicking the effect of CO photo-dissociation.
 - *lowphotod.txt*: Text file containing python function calls used to generate models in which an extra ring of DCO+ and N2H+ is placed in the outer disk. The extra N2H+ is placed close to the midplane, mimicking the effect of additional ionization from X-rays or cosmic rays.
+- *other_models.txt*: Text file containing python function calls used to generate the rest of the models discussed in the paper. 
 
 **Others**:
 - *helper.py*: Includes python functions for plotting the radial profile and spectra of a model.
@@ -86,13 +87,16 @@ Beyond standard packages (astropy, numpy, matplotlib, scipy) this code utilizes:
 
 ## Data
 Some of the functions reference the data, which has not been included in this repository, but is available upon request. The data includes:
-- alma.n2hdata.fits: Cleaned images of N2H+ emission.
+- alma.n2hdata.fits: Cleaned N2H+ channel maps.
 - alma.n2hdata.vis.fits: N2H+ visibilities.
 - alma.dcodata.vis.fits: DCO+ visibilities.
-- dco.fits: Cleaned images of DCO+ emission.
+- dco.fits: Cleaned DCO+ channel maps.
 
 ## Disclaimer
 This code is provided 'as is'. It represents the code that was used to analyze the data, and generate many of the key figures. Its functionality has not been tested on other machines, and any questions should be directed to Amina Diop or Kevin Flaherty.
+
+## Python Versioning
+The file *raytrace.py* uses the trapezoidal method as implemented in scipy using the `trapz` and `cumtrapz`. As of scipy v1.14.0 these function names have been officially removed from scipy, and replaced with `trapezoid` and `cumulative_trapezoid` respectively. If you get an error about not being able to import trapz or cumtrapz, change the import call in raytrace, and change the function calls within raytrace.py from trapz and cumtrapz to trapezoid and cumulative_trapezoid respectively. 
 
 ## Attribution
 If you make use of this package in your research, please cite Diop et al. in prep.

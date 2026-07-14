@@ -5,7 +5,7 @@ from disk import *
 from raytrace import *
 from scipy.optimize import curve_fit
 import scipy.interpolate
-from scipy.integrate import cumtrapz,trapz
+#from scipy.integrate import cumtrapz,trapz
 import time
 import uuid
 from vis_sample import vis_sample
@@ -109,7 +109,7 @@ def compare_vis_sample(datfile='alma.n2hdata',modfile='testpy_alma_n2h',new_weig
 
     return chi
 
-def lnlike(p,massprior=False,cleanup=True,systematic=False,line='n2h32',vcs=True,exp_temp=False,add_ring=False):
+def lnlike(p,massprior=False,cleanup=True,systematic=False,line='n2h32',vcs=True,exp_temp=False,add_ring=False,gs25=False,highphotod=False,Tco=18.):
     '''Calculate the log-likelihood (=-0.5*chi-squared) for a given model.
     
     REQUIRES: alma.n2hodata.vis.fits: The visibility fits files for N2H+.
@@ -152,7 +152,7 @@ def lnlike(p,massprior=False,cleanup=True,systematic=False,line='n2h32',vcs=True
     'vturb':p[4], #turbulence, as a fraction of the thermal broadening for this line
     'Zq0':70., #Zq0
     'Tmid0':14.3,#p[4], #K
-    'Tco':19.,#p[5],
+    'Tco':Tco,#p[5],
     'Tatm0':24.68,#K
     'Zabund':[3.2,100.], #3.2,100 upper and lower boundaries in column density
     'Rabund':[10.,1000.], #inner and outer boundaries for abundance
@@ -164,8 +164,13 @@ def lnlike(p,massprior=False,cleanup=True,systematic=False,line='n2h32',vcs=True
     'PA':154.8, #position angle, degrees
     'distance':144.5, #distance
     'Rbreak': 200.} #Radius of temperature break
+    if gs25 == True:
+        ### Adjust the underlying temperature structure to match that derived by Galloway-Sprietsma et al. 2025
+        all_params['Zq0'] = 56.25
+        all_params['Tmid0'] = 18.8
+        all_params['Tatm0'] = 34.2
     if line.lower() =='co21' or line.lower()=='co32' or line.lower()=='svco21' or line.lower()=='n2h32' :
-        params = [all_params['q'],all_params['Mdisk'],all_params['p'],all_params['Rin'],all_params['Rout'],all_params['Rc'],all_params['incl'],all_params['Mstar'],all_params['Xn2h'],all_params['vturb'],all_params['Zq0'],all_params['Tmid0'],all_params['Tatm0'],all_params['Tco'],all_params['Zabund'],all_params['Rabund'],all_params['handed'],all_params['Rbreak']]
+        params = [all_params['q'],all_params['Mdisk'],all_params['p'],all_params['Rin'],all_params['Rout'],all_params['Rc'],all_params['incl'],all_params['Mstar'],all_params['Xn2h'],all_params['vturb'],all_params['Zq0'],all_params['Tmid0'],all_params['Tco'],all_params['Tatm0'],all_params['Zabund'],all_params['Rabund'],all_params['handed'],all_params['Rbreak']]
     if all_params['Mdisk'] <0 or all_params['Mdisk']>all_params['Mstar'] or all_params['Rin']<0 or all_params['Rin']>all_params['Rout'] or all_params['Rout']<0 or all_params['Rc']<0 or all_params['Mstar']<0 or all_params['vturb']<0 or all_params['Zq0']<0 or all_params['Tmid0']<0 or all_params['Tmid0']>all_params['Tatm0'] or all_params['Tatm0']<0 or all_params['Zabund'][0]<0 or all_params['Zabund'][1]<0 or all_params['Zabund'][1]<all_params['Zabund'][0] or all_params['Rabund'][0]<0 or all_params['Rabund'][0]<all_params['Rin'] or all_params['Rabund'][0]>all_params['Rabund'][1] or all_params['Rabund'][1]<0 or all_params['Rabund'][1]>all_params['Rout']:
         chi = np.inf
         nu = 1
@@ -185,7 +190,8 @@ def lnlike(p,massprior=False,cleanup=True,systematic=False,line='n2h32',vcs=True
                 #disk_structure = Disk(params,rtg=False,exp_temp=exp_temp,ring=[p[-3],p[-2],p[-1]])
                     disk_structure=Disk(params,rtg=False,exp_temp=exp_temp,ring=[(params[3]+p[-2])/2.,p[-2]-params[3],p[-1]])
         else:
-            disk_structure=Disk(params,rtg=False,exp_temp=exp_temp)
+            obs = [180,131,300,270]
+            disk_structure=Disk(params,rtg=False,exp_temp=exp_temp,obs=obs)
         if cleanup:
             modfile = str(uuid.uuid4())[:8]
         else:
@@ -211,7 +217,10 @@ def lnlike(p,massprior=False,cleanup=True,systematic=False,line='n2h32',vcs=True
             disk_structure.set_obs(obs)
             disk_structure.set_rt_grid(vcs=vcs)
             disk_structure.set_line(line)
-            disk_structure.add_mol_ring(p[2],p[2]+p[7],3,100,10**(p[3]),just_frozen=False) #3,100 #.01, .79 #Wring=50
+            if highphotod:
+                disk_structure.add_mol_ring(p[2],p[2]+p[7],.01,.79,10**(p[3]),just_frozen=False) #3,100 #.01, .79 #Wring=50
+            else:
+                disk_structure.add_mol_ring(p[2],p[2]+p[7],3,100,10**(p[3]),just_frozen=False)
             total_model(disk=disk_structure,chanmin=chanmin,nchans=nchans,chanstep=chanstep,offs=[xoff,yoff],modfile=modfile,imres=resolution,obsv=obsv,vsys=vsys,freq0=279.51170100,Jnum=2,distance=all_params['distance'],hanning=True,PA=all_params['PA'],bin=4)
             #if not use_galario:
             #    make_model_vis(datfile=datfile,modfile=modfile,isgas=True,freq0=279.51170100)

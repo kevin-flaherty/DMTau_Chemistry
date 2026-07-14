@@ -1,0 +1,43 @@
+### OTHER MODELS
+## A collection of commands to generate the full suite of models presented in Diop et al.
+
+### N2H+ models
+
+## Low outer ring, with non-zero turbulence
+lnlike(((-.371,-.371,0),-11.28,321,-10.99,0.279*3.438,0.,0.,50),cleanup=False)
+
+## GS25, CO fiducial, Tco=18 K
+lnlike(((-.5,-.13,3),-11.17,270,-100,0.,0.,0.,50),cleanup=False,gs25=True)
+## GS25, CO fiducial, Tco=20 K
+lnlike(((-.5,-.13,3),-11.17,270,-100,0.,0.,0.,50),cleanup=False,gs25=True,Tco=20.)
+
+## GS25, Low outer ring, Tco=18 K
+lnlike(((-.5,-.13,3),-11.21,300,-11.52,0.,0.,0.,50),cleanup=False,gs25=True)
+## GS25, Low outer ring, Tco=20 K
+lnlike(((-.5,-.13,3),-11.22,312,-11.60,0.,0.,0.,50),cleanup=False,gs25=True,Tco=20.)
+
+
+### DCO+ models
+
+## CO fiducial, cold-pathway only, Tco=18 K
+lnlike(((-.371,-.371,0),-100,-12.42,-100,238,0.,0.,0.),cleanup=False)
+## CO fiducial, cold-pathway only, Tco=20 K
+lnlike(((-.371,-.371,0),-100,-11.88,-100,238,0.,0.,0.),cleanup=False,Tco=20.)
+
+## Outer ring, cold-pathway only, Tco=18 K
+lnlike(((-.371,-.371,0),-100,-12.52,-9.51,238,0.,0.,0.),cleanup=False)
+## Outer ring, cold-pathway only, Tco=20 K
+lnlike(((-.371,-.371,0),-100,-11.97,-9.49,233,0.,0.,0.),cleanup=False,Tco=20.)
+
+## Outer ring, with non-zero turbulence
+lnlike(((-.371,-.371,0),-13.31,-12.62,-9.49,236,0.279*3.438,0.,0.),cleanup=False)
+
+## GS25, CO fiducial, Tco=18 K
+lnlike(((-.5,-.13,3),-13.41,-12.28,-100,238,0.,0.,0.),cleanup=False,gs25=True)
+## GS25, CO fiducial, Tco=20 K
+lnlike(((-.5,-.13,3),-13.40,-11.91,-100,238,0.,0.,0.),cleanup=False,gs25=True,Tco=20.)
+
+## GS25, Outer ring, Tco=18 K
+lnlike(((-.5,-.13,3),-13.40,-12.40,-9.96,262,0.,0.,0.),cleanup=False,gs25=True)
+## GS25, Outer ring, Tco=20 K
+lnlike(((-.5,-.13,3),-13.41,-12.08,-9.83,248,0.,0.,0.),cleanup=False,gs25=True,Tco=20.)

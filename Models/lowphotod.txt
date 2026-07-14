@@ -1,8 +1,10 @@
 ## Model with photodissociation in the outer disk, at a low height in the disk
 
 
-#### Change the vertical boundaries in the outer ring to 3, 100
-lnlike(((-.371,-.371,0),-11.37,277.9,-10.81,0.,0.,0.,50.),cleanup=False)
+# Use the following command with an 18 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-11.25,321,-11.09,0.,0.,0.,50.),cleanup=False)
+# Use the following command with a 20 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-11.28,320,-11.03,0.,0.,0.,50.),cleanup=False,Tco=20.)
 write_model_vis('alma.n2hdata.vis.fits','alma.fits')
 ## execfile('make_model_image.py') ### Run in CASA
 mv alma.model.fits alma.n2h_lowphotod.model.fits
@@ -15,8 +17,11 @@ plt.figure()
 plot_profile('alma.n2hdata_Fnu.fits',norm_peak=True)
 plot_profile('alma.n2h_lowphotod.model_Fnu.fits',overplot=True,norm_peak=True)
 
-#photodissociation ring from .79 to 3 in the vertical direction. For DCO+, this is the same as for highphotd
-lnlike(((-.371,-.371,0),-13.27,-12.66,-9.49,238.7,0.,0.,0.),cleanup=False)
+#For DCO+, this is the same as for highphotd
+# Use the following command with an 18 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-13.27,-12.60,-9.50,238,0.,0.,0.),cleanup=False)
+# Use the following command with a 20 K CO freeze-out temperature
+lnlike(((-.371,-.371,0),-13.69,-12.00,-9.49,232,0.,0.,0.),clearnup=False,Tco=20.)
 write_model_vis('alma.dcodata.vis.fits','alma.fits')
 ## execfile('make_model_image.py') ### Run in CASA
 mv alma.model.fits alma.dco_photod.model.fits

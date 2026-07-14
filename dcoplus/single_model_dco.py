@@ -5,7 +5,7 @@ from disk_dco import *
 from raytrace_dco import *
 from scipy.optimize import curve_fit
 import scipy.interpolate
-from scipy.integrate import cumtrapz,trapz
+#from scipy.integrate import cumtrapz,trapz
 #from galario import double as gdouble
 import time
 import uuid
@@ -109,7 +109,7 @@ def gaussian(x,amp,width,center):
 #def laplace(x,amp,width,center):
 #    return amp/(2*width)*np.exp(-np.abs(x-center)/width)
 
-def lnlike(p,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,exp_temp=False,add_ring=False):
+def lnlike(p,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,exp_temp=False,add_ring=False,gs25=False,Tco=18.):
     '''Calculate the log-likelihood (=-0.5*chi-squared) for a given model.
     
     REQUIRES: alma.dcodata.vis.fits: The visibility fits files for DCO+.
@@ -153,7 +153,7 @@ def lnlike(p,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,
     'vturb':p[5], #turbulence, as a fraction of the thermal broadening for this line
     'Zq0':70., #Zq0
     'Tmid0':14.3, #p[6], #K
-    'Tatm0':14.3, #24.68,#K
+    'Tatm0':24.68,#K
     'Zabund':[.79,1000], #upper and lower boundaries in column density
     'Rabund':[10.,1000.], #inner and outer boundaries for abundance
     'handed':-1, #handed
@@ -162,6 +162,11 @@ def lnlike(p,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,
     'PA':154.8, #position angle, degrees
     'distance':144.5, #distance
     'Rbreak':200} #Radius of temperature break
+    if gs25 == True:
+        ### Adjust the underlying temperature structure to match that derived by Galloway-Sprietsma et al. 2025
+        all_params['Zq0'] = 56.25
+        all_params['Tmid0'] = 18.8
+        all_params['Tatm0'] = 34.2
     if line.lower() =='co21' or line.lower()=='co32' or line.lower()=='svco21' or line.lower()=='dco':
         params = [all_params['q'],all_params['Mdisk'],all_params['p'],all_params['Rin'],all_params['Rout'],all_params['Rc'],all_params['incl'],all_params['Mstar'],all_params['Xdco'],all_params['vturb'],all_params['Zq0'],all_params['Tmid0'],all_params['Tatm0'],all_params['Zabund'],all_params['Rabund'],all_params['handed'],all_params['Rbreak']]
     if all_params['Mdisk'] <0 or all_params['Mdisk']>all_params['Mstar'] or all_params['Rin']<0 or all_params['Rin']>all_params['Rout'] or all_params['Rout']<0 or all_params['Rc']<0 or all_params['Mstar']<0 or all_params['vturb']<0 or all_params['Zq0']<0 or all_params['Tmid0']<0 or all_params['Tmid0']>all_params['Tatm0'] or all_params['Tatm0']<0 or all_params['Zabund'][0]<0 or all_params['Zabund'][1]<0 or all_params['Zabund'][1]<all_params['Zabund'][0] or all_params['Rabund'][0]<0 or all_params['Rabund'][0]<all_params['Rin'] or all_params['Rabund'][0]>all_params['Rabund'][1] or all_params['Rabund'][1]<0 or all_params['Rabund'][1]>all_params['Rout']:
@@ -184,7 +189,9 @@ def lnlike(p,massprior=False,cleanup=False,systematic=False,line='dco',vcs=True,
                 #disk_structure = Disk(params,rtg=False,exp_temp=exp_temp,ring=[p[-3],p[-2],p[-1]])
                     disk_structure=Disk(params,rtg=False,exp_temp=exp_temp,ring=[(params[3]+p[-2])/2.,p[-2]-params[3],p[-1]])
         else:
-            disk_structure=Disk(params,rtg=False,exp_temp=exp_temp)
+            obs = [180,131,300,270]
+            disk_structure=Disk(params,rtg=False,exp_temp=exp_temp,obs=obs)
+            disk_structure.Tco=Tco
         if cleanup:
             tf = tempfile.NamedTemporaryFile()
             modfile = tf.name[-9:]
